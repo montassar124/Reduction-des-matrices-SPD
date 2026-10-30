@@ -1,0 +1,9 @@
+Implementation,Reducer,Classifier,Accuracy
+autoencoder.py,AE_baseline_4L,KNN (k=5),0.7272727272727273
+autoencoder.py,AE_baseline_4L,Logistic Reg.,0.6818181818181818
+autoencoder.py,AE_baseline_4L,SVM (RBF),0.6818181818181818
+autoencoder.py,AE_baseline_4L,Random Forest,0.6363636363636364
+final.ipynb,AE_baseline_4L,KNN (k=5),0.7273
+final.ipynb,AE_baseline_4L,Logistic Reg.,0.6364
+final.ipynb,AE_baseline_4L,SVM (RBF),0.5909
+final.ipynb,AE_baseline_4L,Random Forest,0.6364
