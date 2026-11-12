@@ -5,8 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,9 +24,7 @@ embeddings = {
 }
 classifiers = {
     "kNN (k=5)": KNeighborsClassifier(n_neighbors=5),
-    "Logistic regression": LogisticRegression(max_iter=1000, random_state=42),
     "SVM (RBF)": SVC(kernel="rbf", random_state=42),
-    "Random forest": RandomForestClassifier(n_estimators=100, random_state=42),
 }
 
 rows = []

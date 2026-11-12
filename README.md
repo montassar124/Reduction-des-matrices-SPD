@@ -106,7 +106,82 @@ To compare PCA and tangent PCA directly on the MLSP/COBRE data, run:
 C:\Users\Globaltech\AppData\Local\Programs\Python\Python312\python.exe -m scripts.compare_pca_mlsp
 ```
 
-This evaluates both methods with kNN, logistic regression, RBF-SVM, and random
-forest over 10 stratified 80/20 splits. It saves
+This evaluates both methods with kNN and RBF-SVM over 10 stratified 80/20
+splits. It saves
 `mlsp_pca_tangent_pca_results.csv` and
 `figures/07_mlsp_pca_vs_tangent_pca.png`.
+
+## Local geometry with multiple tangent references
+
+The local-geometry experiment adapts the number of references to the data. It
+tests one or more possible numbers of reference points and keeps multiple
+references only when the Riemannian silhouette is positive and the within-group
+dispersion decreases sufficiently. Otherwise, it keeps one global reference.
+It computes one SPD center per retained group and assigns each subject to its
+nearest center using the affine-invariant Riemannian distance. Each local tangent vector is then
+parallel-transported to the global reference tangent space, and the
+transported offset of its local center is added before classification. This
+alignment is necessary because tangent coordinates from different references
+cannot be compared directly.
+
+Run it from the repository root:
+
+```text
+C:\Users\Globaltech\AppData\Local\Programs\Python\Python312\python.exe -m scripts.run_local_geometry
+```
+
+The experiment saves:
+
+- `local_geometry_centers.csv`: size and distance statistics for each local
+  reference;
+- `local_geometry_center_distances.csv`: pairwise Riemannian distances
+  between the local references;
+- `local_geometry_subject_assignments.csv`: subject-to-reference assignments;
+- `local_geometry_accuracy.csv`: classification comparison with global tangent
+  PCA;
+- `figures/08_local_geometry_multi_reference.png`: distance and local-chart
+  visualizations.
+- `figures/09_local_geometry_accuracy.png`: accuracy comparison between the
+  global and multi-reference tangent representations.
+
+To test the method in controlled situations, generate synthetic SPD data with
+different levels of separation and noise:
+
+```text
+C:\Users\Globaltech\AppData\Local\Programs\Python\Python312\python.exe -m scripts.generate_geometry_comparison
+```
+
+This creates `synthetic_geometry_cases.npz` containing the generated SPD
+matrices and labels, `synthetic_geometry_comparison.csv`, and
+`figures/10_synthetic_geometry_comparison.png`. The cases are: one compact
+region, two moderately separated regions, two strongly separated regions, and
+two regions with high noise. It also includes a fourth-region stress test,
+where the adaptive method must detect four references. Each case contains
+1000 SPD matrices and compares classic PCA, global tangent PCA, and adaptive
+references using ten stratified 50/50 train/test splits. All preprocessing
+and reference selection are fitted on the training half only.
+
+The paper-based comparison uses the saved matrices from the other paper
+protocol in `paper_synthetic_spd_cases.npz` when that file is available. Run:
+
+```text
+C:\Users\Globaltech\AppData\Local\Programs\Python\Python312\python.exe -m scripts.compare_paper_spd_reductions
+```
+
+It evaluates classic PCA, tangent PCA, adaptive references, and LLE with ten
+stratified 50/50 train/test splits and writes
+`paper_spd_reductions_comparison.csv`.
+
+To visualize the spherical log-SPD data and the 3-D geometry produced by each
+method, including a transparent triangular mesh, run:
+
+```text
+C:\Users\Globaltech\AppData\Local\Programs\Python\Python312\python.exe -m scripts.plot_spherical_geometries_3d
+```
+
+The figures are saved as `figures/14_spherical_geometries_modere.png` and
+`figures/14_spherical_geometries_fort.png`.
+
+Benchmark terminal output now reports accuracy and six-neighbour preservation
+as percentages. The CSV files contain `Accuracy (%)`, `Accuracy std (%)`, and
+`Neighbours preserved (%)` for direct comparison.

@@ -30,8 +30,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -134,6 +132,98 @@ def scale_pca(features):
 
 Z_pca = scale_pca(spd.reshape(len(spd), -1))
 Z_tangent_pca = scale_pca(tangent)
+"""
+    ),
+    nbf.v4.new_markdown_cell(
+        """### Géométrie locale avec plusieurs repères
+
+Un seul espace tangent peut être insuffisant lorsque les connectomes sont
+répartis sur plusieurs régions courbées. Le nombre de repères n'est pas imposé :
+un seul repère est conservé si les données ne montrent pas de séparation
+riemannienne fiable. Sinon, plusieurs centres SPD sont calculés et chaque
+sujet est affecté à son repère le plus proche. Les coordonnées locales sont
+ensuite transportées vers un repère commun."""
+    ),
+    nbf.v4.new_code_cell(
+        """# Multi-reference local geometry
+import sys
+
+sys.path.insert(0, str(ROOT))
+from spd_reduction.local_geometry import (
+    affine_invariant_distance,
+    pairwise_affine_invariant_distances,
+    aligned_local_tangent_coordinates,
+    riemannian_mean,
+    summarize_local_geometry,
+)
+
+local_summary, local_centers, local_assignments, local_tangent = (
+    summarize_local_geometry(spd)
+)
+local_tangent = aligned_local_tangent_coordinates(
+    spd, local_centers, local_assignments, riemannian_mean(spd)
+)
+local_distance = np.asarray([
+    affine_invariant_distance(matrix, local_centers[group])
+    for matrix, group in zip(spd, local_assignments)
+])
+local_geometry_table = pd.DataFrame({
+    "Id": ids,
+    "Class": y,
+    "local_reference": local_assignments,
+    "riemannian_distance_to_reference": local_distance,
+})
+local_geometry_table.to_csv(ROOT / "local_geometry_subject_assignments.csv", index=False)
+local_center_distances = pd.DataFrame(
+    pairwise_affine_invariant_distances(local_centers),
+    index=[f"Repère {i}" for i in range(local_summary["n_centers"])],
+    columns=[f"Repère {i}" for i in range(local_summary["n_centers"])],
+)
+local_center_distances.to_csv(ROOT / "local_geometry_center_distances.csv")
+print("number of local references:", local_summary["n_centers"])
+print("silhouette scores:", local_summary["silhouette_scores"])
+print(local_geometry_table.groupby("local_reference").size())
+print("mean distance to local reference:", local_distance.mean())
+print("distances between local references:")
+display(local_center_distances)
+"""
+    ),
+    nbf.v4.new_code_cell(
+        """# Accuracy: global versus multi-reference tangent PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+
+local_embeddings = {
+    "Tangent PCA globale": Z_tangent_pca,
+    "Repères adaptatifs": scale_pca(local_tangent),
+}
+local_classifiers = {
+    "kNN": KNeighborsClassifier(n_neighbors=5),
+    "Logistic": LogisticRegression(max_iter=2000, random_state=42),
+    "SVM": SVC(kernel="rbf", random_state=42),
+    "Random forest": RandomForestClassifier(n_estimators=300, random_state=42),
+}
+local_accuracy_rows = []
+for reducer, embedding in local_embeddings.items():
+    for classifier_name, classifier_template in local_classifiers.items():
+        scores = []
+        for seed in range(10):
+            train_idx, test_idx = train_test_split(
+                np.arange(len(y)), test_size=0.2, random_state=seed, stratify=y
+            )
+            classifier_template.fit(embedding[train_idx], y[train_idx])
+            scores.append(
+                accuracy_score(y[test_idx], classifier_template.predict(embedding[test_idx]))
+            )
+        local_accuracy_rows.append({
+            "Reducer": reducer,
+            "Classifier": classifier_name,
+            "Mean_Accuracy": np.mean(scores),
+            "Std_Accuracy": np.std(scores),
+        })
+local_accuracy = pd.DataFrame(local_accuracy_rows)
+local_accuracy.to_csv(ROOT / "local_geometry_accuracy.csv", index=False)
+local_accuracy.round(4)
 """
     ),
     nbf.v4.new_markdown_cell(
@@ -302,9 +392,7 @@ embeddings = {
 }
 classifiers = {
     "kNN": KNeighborsClassifier(n_neighbors=5),
-    "Logistic": LogisticRegression(max_iter=1000, random_state=42),
     "SVM": SVC(kernel="rbf", random_state=42),
-    "Random forest": RandomForestClassifier(n_estimators=100, random_state=42),
 }
 
 records = []
@@ -407,7 +495,150 @@ display(fig)
 fig.savefig(FIGURES / "02_spd_eigenvalues.png", dpi=180, bbox_inches="tight")
 plt.close(fig)
 
-# 3. Four integrated 2-D embeddings
+# 3. Distribution in a 2-D slice of the SPD cone
+lambda_min = spd_eigenvalues[:, 0]
+lambda_max = spd_eigenvalues[:, -1]
+fig, axis = plt.subplots(figsize=(8, 6), constrained_layout=True)
+axis.axvspan(0, lambda_min.max() * 1.08, color="#dff7ec", alpha=0.8,
+             label="SPD region: eigenvalues > 0")
+axis.axvline(0, color="#d64545", linestyle="--", linewidth=1.5,
+             label="PSD boundary")
+axis.axhline(0, color="#d64545", linestyle="--", linewidth=1.5)
+for label, color in [(0, "#19b5fe"), (1, "#ff6b6b")]:
+    mask = y == label
+    axis.scatter(lambda_min[mask], lambda_max[mask], s=55, color=color,
+                 edgecolors="white", linewidths=0.6, label=f"Class {label}")
+axis.set_xlabel("Smallest eigenvalue")
+axis.set_ylabel("Largest eigenvalue")
+axis.set_title("Subject distribution in a 2-D slice of the SPD cone")
+axis.text(0.03, 0.96, "Convex cone: all eigenvalues are positive",
+          transform=axis.transAxes, va="top", fontsize=10,
+          bbox=dict(boxstyle="round,pad=0.4", facecolor="white", alpha=0.85))
+axis.grid(alpha=0.2)
+axis.legend()
+display(fig)
+fig.savefig(FIGURES / "08_spd_cone_distribution.png", dpi=180, bbox_inches="tight")
+plt.close(fig)
+
+# 4. Distribution in a 3-D slice of the SPD cone
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+eigenvalue_triplet = np.column_stack([
+    spd_eigenvalues[:, 0],
+    spd_eigenvalues[:, spd_eigenvalues.shape[1] // 2],
+    spd_eigenvalues[:, -1],
+])
+fig = plt.figure(figsize=(9, 7), constrained_layout=True)
+axis = fig.add_subplot(111, projection="3d")
+axis.set_facecolor("#f8fbff")
+axis.xaxis.pane.set_facecolor("#eef8f2")
+axis.yaxis.pane.set_facecolor("#eef8f2")
+axis.zaxis.pane.set_facecolor("#eef8f2")
+axis.set_xlim(0, eigenvalue_triplet[:, 0].max() * 1.1)
+axis.set_ylim(0, eigenvalue_triplet[:, 1].max() * 1.1)
+axis.set_zlim(0, eigenvalue_triplet[:, 2].max() * 1.1)
+for label, color in [(0, "#19b5fe"), (1, "#ff6b6b")]:
+    mask = y == label
+    axis.scatter(eigenvalue_triplet[mask, 0],
+                 eigenvalue_triplet[mask, 1],
+                 eigenvalue_triplet[mask, 2],
+                 s=48, color=color, edgecolors="white",
+                 linewidths=0.5, label=f"Class {label}")
+axis.set_xlabel("Smallest eigenvalue")
+axis.set_ylabel("Median eigenvalue")
+axis.set_zlabel("Largest eigenvalue")
+axis.set_title("Subject distribution in a 3-D slice of the SPD cone")
+axis.text2D(
+    0.03, 0.95,
+    "SPD region: the three displayed eigenvalues are positive",
+    transform=axis.transAxes, fontsize=10,
+    bbox=dict(boxstyle="round,pad=0.4", facecolor="white", alpha=0.85),
+)
+axis.legend(loc="upper left")
+display(fig)
+fig.savefig(FIGURES / "09_spd_cone_distribution_3d.png", dpi=180, bbox_inches="tight")
+plt.close(fig)
+
+# 5. Eigenvalue distribution before and after the matrix logarithm
+log_eigenvalues = np.linalg.eigvalsh(log_spd)
+fig, axes = plt.subplots(1, 2, figsize=(13, 5), constrained_layout=True)
+axes[0].hist(spd_eigenvalues.ravel(), bins=30, color="#19b5fe",
+             edgecolor="white", alpha=0.9)
+axes[0].axvline(0, color="#d64545", linestyle="--", linewidth=1.5)
+axes[0].set_title("Before logarithm: SPD matrices")
+axes[0].set_xlabel("Eigenvalue")
+axes[0].set_ylabel("Number of values")
+axes[0].text(
+    0.97, 0.94, "All values > 0",
+    transform=axes[0].transAxes, ha="right", va="top",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85),
+)
+axes[0].grid(alpha=0.2)
+
+axes[1].hist(log_eigenvalues.ravel(), bins=30, color="#8e7dff",
+             edgecolor="white", alpha=0.9)
+axes[1].axvline(0, color="#d64545", linestyle="--", linewidth=1.5)
+axes[1].set_title("After logarithm: tangent-space matrices")
+axes[1].set_xlabel("Log-eigenvalue")
+axes[1].set_ylabel("Number of values")
+axes[1].text(
+    0.97, 0.94, "Positive -> positive\\nBetween 0 and 1 -> negative",
+    transform=axes[1].transAxes, ha="right", va="top",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85),
+)
+axes[1].grid(alpha=0.2)
+fig.suptitle("Distribution change caused by the matrix logarithm")
+display(fig)
+fig.savefig(FIGURES / "10_eigenvalue_distribution_before_after_log.png",
+            dpi=180, bbox_inches="tight")
+plt.close(fig)
+
+# 6. 3-D comparison before and after the matrix logarithm
+fig = plt.figure(figsize=(14, 6), constrained_layout=True)
+axis_before = fig.add_subplot(121, projection="3d")
+axis_after = fig.add_subplot(122, projection="3d")
+triplet_before = np.column_stack([
+    spd_eigenvalues[:, 0],
+    spd_eigenvalues[:, spd_eigenvalues.shape[1] // 2],
+    spd_eigenvalues[:, -1],
+])
+triplet_after = np.column_stack([
+    log_eigenvalues[:, 0],
+    log_eigenvalues[:, log_eigenvalues.shape[1] // 2],
+    log_eigenvalues[:, -1],
+])
+
+for axis, triplet, title in [
+    (axis_before, triplet_before, "Before logarithm: SPD"),
+    (axis_after, triplet_after, "After logarithm: tangent space"),
+]:
+    for label, color in [(0, "#19b5fe"), (1, "#ff6b6b")]:
+        mask = y == label
+        axis.scatter(triplet[mask, 0], triplet[mask, 1], triplet[mask, 2],
+                     s=42, color=color, edgecolors="white",
+                     linewidths=0.5, label=f"Class {label}")
+    axis.set_xlabel("Smallest")
+    axis.set_ylabel("Median")
+    axis.set_zlabel("Largest")
+    axis.set_title(title)
+    axis.grid(alpha=0.25)
+    axis.legend(loc="upper left")
+
+axis_before.set_xlim(0, triplet_before[:, 0].max() * 1.1)
+axis_before.set_ylim(0, triplet_before[:, 1].max() * 1.1)
+axis_before.set_zlim(0, triplet_before[:, 2].max() * 1.1)
+after_min = triplet_after.min()
+after_max = triplet_after.max()
+axis_after.set_xlim(after_min, after_max)
+axis_after.set_ylim(after_min, after_max)
+axis_after.set_zlim(after_min, after_max)
+fig.suptitle("3-D comparison of eigenvalue distributions before and after log")
+display(fig)
+fig.savefig(FIGURES / "11_eigenvalue_distribution_3d_before_after_log.png",
+            dpi=180, bbox_inches="tight")
+plt.close(fig)
+
+# 7. Four integrated 2-D embeddings
 fig, axes = plt.subplots(2, 2, figsize=(12, 9), constrained_layout=True)
 for axis, (name, embedding) in zip(axes.flat, embeddings.items()):
     for label, color in [(0, "#19b5fe"), (1, "#ff6b6b")]:
@@ -424,7 +655,7 @@ display(fig)
 fig.savefig(FIGURES / "03_subject_embeddings.png", dpi=180, bbox_inches="tight")
 plt.close(fig)
 
-# 4. Accuracy comparison for all four reductions
+# 8. Accuracy comparison for all four reductions
 fig, axis = plt.subplots(figsize=(11, 5.5), constrained_layout=True)
 accuracy_table = results.pivot(index="Classifier", columns="Reducer", values="Mean accuracy")
 error_table = results.pivot(index="Classifier", columns="Reducer", values="Std")
@@ -439,7 +670,7 @@ display(fig)
 fig.savefig(FIGURES / "04_accuracy_comparison.png", dpi=180, bbox_inches="tight")
 plt.close(fig)
 
-# 5. PCA versus tangent PCA
+# 9. PCA versus tangent PCA
 pca_table = results[results["Reducer"].isin(["PCA", "Tangent PCA"])]
 fig, axis = plt.subplots(figsize=(10, 5.5), constrained_layout=True)
 pca_means = pca_table.pivot(index="Classifier", columns="Reducer", values="Mean accuracy")
@@ -455,10 +686,10 @@ display(fig)
 fig.savefig(FIGURES / "07_mlsp_pca_vs_tangent_pca.png", dpi=180, bbox_inches="tight")
 plt.close(fig)
 
-# 6. Autoencoder implementation comparison on the common 64/22 split
-classifier_names = ["kNN", "Logistic", "SVM", "Random forest"]
-module_scores = [0.7273, 0.6818, 0.6818, 0.6364]
-notebook_scores = [0.7273, 0.6364, 0.5909, 0.6364]
+# 10. Autoencoder implementation comparison on the common 64/22 split
+classifier_names = ["kNN", "SVM"]
+module_scores = [0.7273, 0.6818]
+notebook_scores = [0.7273, 0.5909]
 x = np.arange(len(classifier_names))
 fig, axis = plt.subplots(figsize=(10, 5.5), constrained_layout=True)
 axis.bar(x - 0.18, module_scores, width=0.36, label="autoencoder.py", color="#19b5fe")
@@ -473,7 +704,7 @@ display(fig)
 fig.savefig(FIGURES / "06_autoencoder_comparison.png", dpi=180, bbox_inches="tight")
 plt.close(fig)
 
-# 7. Compact full summary
+# 11. Compact full summary
 fig, axes = plt.subplots(1, 2, figsize=(14, 5), constrained_layout=True)
 axes[0].bar(["Subjects", "FNC values", "Matrix side"], [86, 378, 28],
             color=["#19b5fe", "#8e7dff", "#00c49a"])
@@ -493,12 +724,73 @@ fig.savefig(FIGURES / "05_full_results_summary.png", dpi=180, bbox_inches="tight
 plt.close(fig)
 """
     ),
+    nbf.v4.new_code_cell(
+        """# Local geometry figures
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), constrained_layout=True)
+for reference in range(local_summary["n_centers"]):
+    mask = local_assignments == reference
+    axes[0].scatter(
+        local_distance[mask],
+        np.zeros(mask.sum()) + reference,
+        s=42,
+        label=f"Repère {reference}",
+    )
+axes[0].set_title("Distance riemannienne au repère local")
+axes[0].set_xlabel("Distance")
+axes[0].set_yticks(range(local_summary["n_centers"]))
+axes[0].legend()
+
+axes[1].bar(
+    list(local_summary["silhouette_scores"]),
+    list(local_summary["silhouette_scores"].values()),
+    color="#8e7dff",
+)
+axes[1].axhline(0, color="black", linewidth=0.8)
+axes[1].set_title("Choix du nombre de repères")
+axes[1].set_xlabel("Nombre de repères")
+axes[1].set_ylabel("Score de silhouette riemannien")
+display(fig)
+fig.savefig(FIGURES / "08_local_geometry_multi_reference.png", dpi=180, bbox_inches="tight")
+plt.close(fig)
+"""
+    ),
+    nbf.v4.new_code_cell(
+        """# Accuracy figure for the local-geometry comparison
+plot_data = local_accuracy.pivot(
+    index="Classifier", columns="Reducer", values="Mean_Accuracy"
+)
+plot_errors = local_accuracy.pivot(
+    index="Classifier", columns="Reducer", values="Std_Accuracy"
+)
+axis = plot_data.plot.bar(
+    figsize=(11, 5.5), yerr=plot_errors, capsize=4,
+    color=["#8e7dff", "#ff9f43"], edgecolor="#16324f",
+)
+axis.set_ylim(0, 1)
+axis.set_ylabel("Accuracy moyenne")
+axis.set_title("Tangent PCA globale versus plusieurs repères locaux")
+axis.grid(axis="y", alpha=0.25)
+axis.tick_params(axis="x", rotation=18)
+axis.legend(title="")
+display(axis.get_figure())
+axis.get_figure().savefig(
+    FIGURES / "09_local_geometry_accuracy.png", dpi=180, bbox_inches="tight"
+)
+plt.close(axis.get_figure())
+"""
+    ),
     nbf.v4.new_markdown_cell(
         r"""### Key result
 
 The best result in the MLSP/COBRE comparison is obtained by tangent PCA.
 The eigenvalue plot confirms that all 86 generated \(28\times28\) matrices
-are SPD."""
+are SPD. The cone plot shows that every subject lies in the positive
+eigenvalue region. The 3-D cone view uses the smallest, median, and largest
+eigenvalues as a readable slice of the full space. The SPD set is convex,
+while its usual geometric
+structure is non-Euclidean, which motivates the tangent-space mapping. The
+before/after eigenvalue plot shows how the matrix logarithm changes the scale
+of the SPD eigenvalues."""
     ),
     nbf.v4.new_code_cell(
         """# Save all measured results

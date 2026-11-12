@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.linalg import expm
 
 
 def vectors_to_symmetric(vectors: np.ndarray, dimension: int = 28) -> np.ndarray:
@@ -51,12 +50,22 @@ def build_spd_subjects(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Build SPD matrices and their tangent features from connectome vectors."""
     symmetric = vectors_to_symmetric(vectors, dimension)
-    spd = np.stack([expm(matrix) for matrix in symmetric])
+    spd = np.stack([_spectral_exp(matrix) for matrix in symmetric])
     eigenvalues = np.linalg.eigvalsh(spd)
     if np.any(eigenvalues <= 0):
         raise RuntimeError("Matrix exponential produced a non-SPD matrix.")
 
-    from scipy.linalg import logm
-
-    log_spd = np.stack([logm(matrix).real for matrix in spd])
+    log_spd = np.stack([_spectral_log(matrix) for matrix in spd])
     return spd, symmetric_upper_vectors(log_spd).astype(np.float32)
+
+
+def _spectral_exp(matrix: np.ndarray) -> np.ndarray:
+    values, vectors = np.linalg.eigh(matrix)
+    return (vectors * np.exp(values)) @ vectors.T
+
+
+def _spectral_log(matrix: np.ndarray) -> np.ndarray:
+    values, vectors = np.linalg.eigh(matrix)
+    if np.any(values <= 0):
+        raise ValueError("Matrix is not SPD.")
+    return (vectors * np.log(values)) @ vectors.T

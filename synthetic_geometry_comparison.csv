@@ -1,0 +1,16 @@
+Case,Representation,Mean accuracy,Std,References,Silhouette
+Proche d'un seul centre,PCA classique,0.49219999999999997,0.02128755504984075,1,
+Proche d'un seul centre,Tangent PCA globale,0.489,0.024054105678657022,1,
+Proche d'un seul centre,Repères adaptatifs,0.489,0.024054105678657022,1,0.0
+Deux régions qui se chevauchent,PCA classique,0.9998000000000001,0.0006000000000000005,1,
+Deux régions qui se chevauchent,Tangent PCA globale,1.0,0.0,1,0.34631227009591214
+Deux régions qui se chevauchent,Repères adaptatifs,1.0,0.0,2,0.34631227009591214
+Deux régions séparées,PCA classique,1.0,0.0,1,
+Deux régions séparées,Tangent PCA globale,0.9974000000000001,0.005868560300448489,1,0.7070651522941453
+Deux régions séparées,Repères adaptatifs,0.8183999999999999,0.1376279041473785,2,0.7070651522941453
+Quatre régions avec recouvrement,PCA classique,0.9955999999999999,0.0024979991993593614,1,
+Quatre régions avec recouvrement,Tangent PCA globale,0.978,0.006196773353931872,1,0.2899662982920437
+Quatre régions avec recouvrement,Repères adaptatifs,0.9563999999999998,0.007364781055808795,4,0.4855805431100613
+Quatre régions éloignées,PCA classique,0.9948,0.0033704599092705466,1,
+Quatre régions éloignées,Tangent PCA globale,0.9972,0.004118252056394804,1,0.40076969024703085
+Quatre régions éloignées,Repères adaptatifs,0.8183999999999999,0.10347096211014951,4,0.615770629317243

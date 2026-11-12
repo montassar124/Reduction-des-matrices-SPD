@@ -1,0 +1,11 @@
+Dataset,Method,Seed,Accuracy,Matrices,Dimension,Neighbors
+SPD synthétique 3x3,PCA,0,1.0,500,3,0
+SPD synthétique 3x3,LLE,0,1.0,500,3,12
+SPD synthétique 3x3,PCA,1,1.0,500,3,0
+SPD synthétique 3x3,LLE,1,1.0,500,3,12
+SPD synthétique 3x3,PCA,2,1.0,500,3,0
+SPD synthétique 3x3,LLE,2,1.0,500,3,12
+SPD synthétique 3x3,PCA,3,1.0,500,3,0
+SPD synthétique 3x3,LLE,3,1.0,500,3,12
+SPD synthétique 3x3,PCA,4,1.0,500,3,0
+SPD synthétique 3x3,LLE,4,1.0,500,3,12

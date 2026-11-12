@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 import torch
 import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -44,9 +42,7 @@ train_idx, validation_idx = train_test_split(
 )
 classifiers = {
     "KNN (k=5)": KNeighborsClassifier(n_neighbors=5),
-    "Logistic Reg.": LogisticRegression(max_iter=1000, random_state=42),
     "SVM (RBF)": SVC(kernel="rbf", random_state=42),
-    "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
 }
 rows = []
 for name, classifier in classifiers.items():
@@ -64,9 +60,7 @@ for name, classifier in classifiers.items():
 
 notebook_results = {
     "KNN (k=5)": 0.7273,
-    "Logistic Reg.": 0.6364,
     "SVM (RBF)": 0.5909,
-    "Random Forest": 0.6364,
 }
 for classifier_name, accuracy in notebook_results.items():
     rows.append(
