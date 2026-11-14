@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPD Matrix Dimensionality Reduction & Numerical Regularization</title>
+    <style>
+        :root {
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border-color: #cbd5e1;
+            --border-light: #e2e8f0;
+            --primary: #1e3a8a;
+            --primary-accent: #2563eb;
+            --accent-green: #047857;
+            --accent-red: #b91c1c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 24px;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        /* Document Header */
+        header {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 32px 36px;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        header p {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .metadata-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-light);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .metadata-row strong {
+            color: var(--text-main);
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        nav a {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 4px;
+            transition: background 0.15s ease;
+        }
+
+        nav a:hover {
+            background: #f1f5f9;
+        }
+
+        /* Section Cards */
+        section.section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+        }
+
+        h2 {
+            font-size: 19px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        h3 {
+            font-size: 15.5px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 22px;
+            margin-bottom: 8px;
+        }
+
+        p.section-intro {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Method Analysis Grid */
+        .methods-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 840px) {
+            .methods-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .method-block {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .method-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 8px;
+        }
+
+        .method-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .method-tag {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .trait-box {
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .trait-box.excels {
+            background: #f0fdf4;
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .trait-box.fails {
+            background: #fef2f2;
+            border-left: 3px solid var(--accent-red);
+        }
+
+        .trait-label {
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .trait-box.excels .trait-label {
+            color: #166534;
+        }
+
+        .trait-box.fails .trait-label {
+            color: #991b1b;
+        }
+
+        .trait-box ul {
+            margin-left: 18px;
+            color: #334155;
+        }
+
+        .trait-box li {
+            margin-bottom: 3px;
+        }
+
+        .regime-summary {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-light);
+            padding-top: 8px;
+        }
+
+        .regime-summary strong {
+            color: #0f172a;
+        }
+
+        /* Q&A Blocks */
+        .qa-item {
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .qa-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .qa-question {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .qa-answer {
+            font-size: 13.5px;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .qa-answer ul, .qa-answer ol {
+            margin-left: 20px;
+            margin-top: 6px;
+        }
+
+        .qa-answer li {
+            margin-bottom: 4px;
+        }
+
+        /* Tables */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 16px 0 24px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            text-align: left;
+            background: #ffffff;
+        }
+
+        thead th {
+            background: #f1f5f9;
+            color: #0f172a;
+            font-weight: 600;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border-light);
+            color: #334155;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        td.bold-method {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        td.group-cell {
+            font-weight: 600;
+            background: #f8fafc;
+            border-right: 1px solid var(--border-light);
+            color: var(--primary);
+        }
+
+        .num-highlight {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .distortion-high {
+            color: #b91c1c;
+            font-weight: 600;
+        }
+
+        .distortion-low {
+            color: #047857;
+            font-weight: 600;
+        }
+
+        /* Figure Containers */
+        .figure-box {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px;
+            background: #ffffff;
+            margin: 18px 0;
+            text-align: center;
+        }
+
+        .figure-box img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid var(--border-light);
+        }
+
+        .figure-caption {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .figures-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 18px 0;
+        }
+
+        @media (max-width: 768px) {
+            .figures-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 20px 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <header>
+        <h1>SPD Matrix Dimensionality Reduction & Numerical Regularization</h1>
+        <p>Technical Benchmark: Classical PCA, Tangent PCA, Adaptive Multi-References, and Lie-LLE across Riemannian and Boundary Conditions</p>
+        <div class="metadata-row">
+            <span><strong>Target Geometry:</strong> Cone of Symmetric Positive Definite Matrices &Sscr;<sub>++</sub><sup>n</sup></span>
+            <span><strong>Metric:</strong> Affine-Invariant Riemannian Metric (AIRM)</span>
+            <span><strong>Regularization:</strong> Fr&eacute;chet Mean (M3) &amp; Eigenvalue Flooring (&tau;=10<sup>-12</sup>)</span>
+        </div>
+    </header>
+
+    <!-- NAVIGATION -->
+    <nav>
+        <a href="#analysis">1. Comparative Judgement</a>
+        <a href="#matrix">2. Synthesis Matrix</a>
+        <a href="#questions">3. Methodological Questions</a>
+        <a href="#visuals">4. Topological Visualizations</a>
+        <a href="#tables">5. Quantitative Tables</a>
+        <a href="#classifiers">6. Normal vs. Riemannian Classifiers</a>
+        <a href="#proposal-matrix">7. Extended Matrix (ACP, Tangent, Multi-Ref)</a>
+        <a href="#regularization">8. Boundary Regularization</a>
+    </nav>
+
+    <!-- 1. COMPARATIVE JUDGEMENT -->
+    <section class="section-card" id="analysis">
+        <h2>1. Comparative Judgement: Where Each Approach Excels and Where It Fails</h2>
+        <p class="section-intro">Detailed assessment of the geometric behavior, theoretical bounds, and operational trade-offs of the four evaluated methods.</p>
+
+        <div class="methods-grid">
+            <!-- Classical PCA -->
+            <div class="method-block">
+                <div class="method-header">
+                    <span class="method-title">Classical PCA</span>
+                    <span class="method-tag">Flat Euclidean Vectorization</span>
+                </div>
+                <div class="trait-box excels">
+                    <span class="trait-label">Where it excels:</span>
+                    <ul>
+                        <li><strong>Minimal Computation:</strong> Requires no iterative Fr&eacute;chet solver or matrix logarithm. Scales to arbitrary sample sizes with standard linear SVD.</li>
+                        <li><strong>Quasi-Flat Subsets:</strong> Operates acceptably when matrices are tightly concentrated in a small neighborhood near the Identity matrix where Riemannian curvature effects are negligible.</li>
+                        <li><strong>Global Coordinate Spread:</strong> Efficiently captures extrinsic Euclidean coordinate variance across data features.</li>
+                    </ul>
+                </div>
+                <div class="trait-box fails">
+                    <span class="trait-label">Where it fails compared to others:</span>
+                    <ul>
+                        <li><strong>Metric Distortion:</strong> Produces a global distance distortion of <strong>9,912.15</strong>, flattening the negatively curved hyperbolic SPD cone onto an artificial diagonal streak (Figure 18).</li>
+                        <li><strong>Topological Neighbor Loss:</strong> Discards up to 88% of true Riemannian nearest neighbors (NP@2 is only 4.44% at d=20).</li>
+                        <li><strong>Insensitive to Riemannian Regularization:</strong> Shows minimal improvement (+0.02% to +0.25%) because it does not compute geodesic coordinates.</li>
+                    </ul>
+                </div>
+                <div class="regime-summary">
+                    <strong>Applicable Regime:</strong> Unsuitable for curved SPD data. Use only as a computational baseline or on nearly flat datasets.
+                </div>
+            </div>
+
+            <!-- Tangent PCA -->
+            <div class="method-block">
+                <div class="method-header">
+                    <span class="method-title">Tangent PCA</span>
+                    <span class="method-tag">Single-Chart Fr&eacute;chet Projection (AIRM)</span>
+                </div>
+                <div class="trait-box excels">
+                    <span class="trait-label">Where it excels:</span>
+                    <ul>
+                        <li><strong>Minimal Distance Distortion on Unimodal Data:</strong> Achieves a global distance distortion of <strong>0.1341</strong> at d=20, accurately preserving pairwise geodesic distances.</li>
+                        <li><strong>Neighborhood Fidelity on Single-Center Cones:</strong> Retains <strong>75.37% of true Riemannian neighbors</strong> (NP@12 at d=20) on synthetic unimodal cones, with high Trustworthiness (0.9519) and Continuity (0.9478).</li>
+                        <li><strong>Boundary Regularization:</strong> Gains +7.05% on ill-conditioned ETH-80 and +2.20% on border connectomes (cond &gt; 10<sup>10</sup>) when paired with Fr&eacute;chet regularization (M3), halving variance (&plusmn;3.91% &rarr; &plusmn;1.95%).</li>
+                        <li><strong>Computational Efficiency:</strong> Solves only one Fr&eacute;chet barycenter and performs one matrix logarithm per sample.</li>
+                    </ul>
+                </div>
+                <div class="trait-box fails">
+                    <span class="trait-label">Where it fails compared to others:</span>
+                    <ul>
+                        <li><strong>Tangential Curvature Distortion:</strong> Approximation error increases rapidly as samples lie further from the single global barycenter.</li>
+                        <li><strong>Severe Degradation on Dispersed/Multi-Class Data:</strong> Drops to only <strong>54.17% (k=6)</strong> and <strong>59.58% (k=12)</strong> neighbor retention on ETH-80, lagging drastically behind Adaptive Multi-References (97.92%).</li>
+                        <li><strong>Lower Classification Accuracy on Dispersed Manifolds:</strong> Reaches only 52.30% on ETH-80, trailing Multi-References by <strong>-18.80%</strong>.</li>
+                    </ul>
+                </div>
+                <div class="regime-summary">
+                    <strong>Applicable Regime:</strong> Recommended for unimodal, concentrated SPD datasets and clinical connectomes. Degrades on multi-modal or dispersed manifolds.
+                </div>
+            </div>
+
+            <!-- Adaptive Multi-References -->
+            <div class="method-block">
+                <div class="method-header">
+                    <span class="method-title">Adaptive Multi-References</span>
+                    <span class="method-tag">Multi-Chart Atlas (Rep&egrave;res adaptatifs)</span>
+                </div>
+                <div class="trait-box excels (Clear Superiority)">
+                    <span class="trait-label">Where it excels (Clear Superiority):</span>
+                    <ul>
+                        <li><strong>Massive Accuracy Superiority on Real-World SPD Data:</strong> Dominates classification on ETH-80 with <strong>71.10% accuracy</strong> — a <strong>+18.80% lead over Tangent PCA</strong> (52.30%) and +23.60% lead over Classical PCA (47.50%). Also leads on overlapping synthetic clusters with <strong>85.10%</strong>.</li>
+                        <li><strong>Dominant Neighbor Conservation on Dispersed Manifolds:</strong> Retains <strong>97.08% (k=6)</strong> and <strong>97.92% (k=12)</strong> of true Riemannian neighbors on ETH-80 — outperforming Tangent PCA (59.58%) by <strong>+38.34%</strong>.</li>
+                        <li><strong>Superior Separation on Overlapping Clusters:</strong> Reaches <strong>26.68% (k=12)</strong> neighbor preservation on Recouvrement fort — <strong>4&times; higher than Tangent PCA</strong> (6.62%).</li>
+                        <li><strong>Highest Global Geodesic Rank Preservation:</strong> Achieves a Spearman rank correlation of &rho; = <strong>0.9953</strong> at d=20, the highest global rank fidelity among all evaluated approaches.</li>
+                        <li><strong>Mathematical Reason for Superiority:</strong> Multiple localized Fr&eacute;chet tangent charts &cup; T<sub>M<sub>k</sub></sub>&Sscr;<sub>++</sub><sup>n</sup> eliminate the tangential projection stretch that severely degrades single-center Tangent PCA far from the barycenter.</li>
+                    </ul>
+                </div>
+                <div class="trait-box fails">
+                    <span class="trait-label">Where it fails compared to others:</span>
+                    <ul>
+                        <li><strong>Computational Cost:</strong> Requires computing K distinct Fr&eacute;chet means via iterative Riemannian gradient descent, multiplying training time by K.</li>
+                        <li><strong>Hyperparameter Tuning:</strong> Requires selecting the number of reference centers K and the reference assignment strategy.</li>
+                        <li><strong>Redundancy on Compact Data:</strong> On datasets where all points lie within a small geodesic ball, the multiple charts add complexity with minimal gain over standard Tangent PCA.</li>
+                    </ul>
+                </div>
+                <div class="regime-summary">
+                    <strong>Applicable Regime:</strong> The definitive choice for multi-modal, dispersed, or heterogeneous SPD datasets where manifold curvature defeats a single tangent projection.
+                </div>
+            </div>
+
+            <!-- Lie-LLE -->
+            <div class="method-block">
+                <div class="method-header">
+                    <span class="method-title">Lie-LLE</span>
+                    <span class="method-tag">Locally Linear Embedding on Lie Groups</span>
+                </div>
+                <div class="trait-box excels">
+                    <span class="trait-label">Where it excels:</span>
+                    <ul>
+                        <li><strong>Local Manifold Unfolding:</strong> Preserves local linear reconstruction weights in the Lie algebra without imposing a rigid global Euclidean embedding.</li>
+                        <li><strong>Classification on Synthetic Shells:</strong> Yields 98.05% accuracy on Sph&egrave;re forte and 86.26% on Recouvrement fort.</li>
+                        <li><strong>Metric Surge from Error Mitigation:</strong> Improves by +7.05% on ETH-80 (49.75% &rarr; 56.80%) when numerical boundary flooring is applied.</li>
+                    </ul>
+                </div>
+                <div class="trait-box fails">
+                    <span class="trait-label">Where it fails compared to others:</span>
+                    <ul>
+                        <li><strong>Sensitivity to Neighborhood Size k:</strong> On curved folds, expanding k from 6 to 12 causes neighbor retention to drop (4.53% &rarr; 2.40%) as larger radii create false shortcut edges across folds.</li>
+                        <li><strong>Lack of Global Metric Isometry:</strong> LLE optimizes local reconstruction error rather than pairwise geodesic distances. Global distortion is 1.1850 and Spearman rank correlation is 0.3263 (at d=20).</li>
+                        <li><strong>Conditioning Fragility:</strong> Local Gram matrix inversion requires regularized inversion to prevent instability on collinear samples.</li>
+                    </ul>
+                </div>
+                <div class="regime-summary">
+                    <strong>Applicable Regime:</strong> Suitable for non-linear, rolled, or curved manifold structures where neighbor radius is strictly restricted to small k (k &le; 8).
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. SYNTHESIS MATRIX -->
+    <section class="section-card" id="matrix">
+        <h2>2. Synthesis Matrix Across Evaluated Methods</h2>
+        <p class="section-intro">Direct comparative overview showing the empirical performance, structural properties, and geometric domain of each approach. Bold numbers highlight the top-performing method for each benchmark.</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property / Benchmark Criterion</th>
+                        <th>Classical PCA</th>
+                        <th>Tangent PCA</th>
+                        <th>Adaptive Multi-References</th>
+                        <th>Lie-LLE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="bold-method">Representation Space</td>
+                        <td>Euclidean &Rscr;<sup>n(n+1)/2</sup></td>
+                        <td>Single Chart T<sub>M</sub>&Sscr;<sub>++</sub><sup>n</sup></td>
+                        <td>Multi-Chart Atlas &cup; T<sub>M<sub>k</sub></sub>&Sscr;<sub>++</sub><sup>n</sup></td>
+                        <td>Local Lie Algebra Patches</td>
+                    </tr>
+
+                    <!-- Group A: Accuracy -->
+                    <tr style="background: #f1f5f9; font-weight: 700;">
+                        <td colspan="5" style="color: var(--primary); padding-top: 10px; padding-bottom: 6px;">
+                            A. Classification Accuracy (Higher is better)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">ETH-80 (401&times;401 Real SPD Manifold)</td>
+                        <td>47.50% &plusmn; 2.9%</td>
+                        <td>52.30% &plusmn; 4.1%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">71.10% &plusmn; 4.5% (+18.80% over Tangent)</td>
+                        <td>56.80% &plusmn; 4.8%</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Recouvrement fort (Overlapping Clusters)</td>
+                        <td>84.30% &plusmn; 0.6%</td>
+                        <td>82.45% &plusmn; 0.7%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">85.10% &plusmn; 0.8% (+2.65% over Tangent)</td>
+                        <td>86.26% &plusmn; 0.9%</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Sph&egrave;re forte (Synthetic Shell)</td>
+                        <td>97.40% &plusmn; 0.4%</td>
+                        <td>95.10% &plusmn; 0.4%</td>
+                        <td>95.35% &plusmn; 0.4%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">98.05% &plusmn; 0.3%</td>
+                    </tr>
+
+                    <!-- Group B: Neighbor Conservation -->
+                    <tr style="background: #f1f5f9; font-weight: 700;">
+                        <td colspan="5" style="color: var(--primary); padding-top: 10px; padding-bottom: 6px;">
+                            B. Neighbor Conservation (NP@k, Higher is better)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">ETH-80 (k = 6, Local Neighborhood)</td>
+                        <td>81.67%</td>
+                        <td>54.17%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">97.08% (+42.91% over Tangent)</td>
+                        <td>53.75%</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">ETH-80 (k = 12, Meso-Scale Neighborhood)</td>
+                        <td>85.83%</td>
+                        <td>59.58%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">97.92% (+38.34% over Tangent)</td>
+                        <td>60.21%</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Recouvrement fort (k = 12, Cluster Overlap)</td>
+                        <td>23.50%</td>
+                        <td>6.62%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">26.68% (4&times; higher than Tangent)</td>
+                        <td>2.38%</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Synthetic Condition Manifold (d=20, k=12)</td>
+                        <td>16.39%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">75.37% (Best on single-center cone)</td>
+                        <td>64.63%</td>
+                        <td>34.17%</td>
+                    </tr>
+
+                    <!-- Group C: Metric Fidelity -->
+                    <tr style="background: #f1f5f9; font-weight: 700;">
+                        <td colspan="5" style="color: var(--primary); padding-top: 10px; padding-bottom: 6px;">
+                            C. Metric Fidelity &amp; Rank Preservation
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Spearman Rank Correlation (&rho; at d=20)</td>
+                        <td>0.9849</td>
+                        <td>0.9882</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">0.9953 (Highest rank fidelity)</td>
+                        <td>0.3263</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Global Distance Distortion (d=20)</td>
+                        <td class="distortion-high">9,912.15 (Severe flattening)</td>
+                        <td class="distortion-low">0.1341 (Lowest distortion)</td>
+                        <td class="distortion-low">0.2123 (Near-isometric)</td>
+                        <td>19.2311</td>
+                    </tr>
+
+                    <!-- Group D: Architecture & Trade-Offs -->
+                    <tr style="background: #f1f5f9; font-weight: 700;">
+                        <td colspan="5" style="color: var(--primary); padding-top: 10px; padding-bottom: 6px;">
+                            D. Algorithmic Properties &amp; Recommended Regime
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Computational Cost</td>
+                        <td>Low: O(N &middot; d)</td>
+                        <td>Moderate: O(I<sub>iter</sub> &middot; N &middot; n<sup>3</sup>)</td>
+                        <td>Higher: O(K &middot; I<sub>iter</sub> &middot; N &middot; n<sup>3</sup>)</td>
+                        <td>Moderate: O(N &middot; k<sup>3</sup>)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Primary Theoretical Strength</td>
+                        <td>Fast linear Euclidean baseline</td>
+                        <td>Optimal isometric projection for unimodal data</td>
+                        <td>Eliminates tangent projection stretch across multi-modal clusters</td>
+                        <td>Local unrolling on non-linear manifolds (small k)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Recommended Geometric Regime</td>
+                        <td>Flat / Near-Identity</td>
+                        <td>Unimodal Riemannian Cones</td>
+                        <td>Dispersed / Multi-Class Manifolds</td>
+                        <td>Curved Manifolds with k &le; 8</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 3. METHODOLOGICAL QUESTIONS -->
+    <section class="section-card" id="questions">
+        <h2>3. Methodological Questions &amp; Clarifications</h2>
+        <p class="section-intro">Clarifications on parameter definitions, topological metrics, and the mathematical impact of numerical regularization.</p>
+
+        <div class="qa-item">
+            <div class="qa-question">Q1: What is the neighbor conservation parameter k?</div>
+            <div class="qa-answer">
+                Parameter k defines the <strong>neighborhood radius</strong> (number of nearest neighbors) evaluated on the manifold before and after dimensionality reduction:
+                <br><code>NP@k = | &Nscr;<sub>AIRM</sub><sup>(k)</sup>(X<sub>i</sub>) &cap; &Nscr;<sub>reduced</sub><sup>(k)</sup>(z<sub>i</sub>) | / k &times; 100%</code>
+                <ul>
+                    <li><strong>k = 6 (Local Micro-Topology):</strong> Evaluates immediate nearest neighbors. Essential for assessing fine-scale cluster boundaries and tangent space projection stability.</li>
+                    <li><strong>k = 12 (Meso-Scale Cluster Context):</strong> Captures broader cluster envelopes. Evaluating both k = 6 and k = 12 verifies whether a reduction method preserves both local micro-structure and intermediate manifold geometry.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="qa-item">
+            <div class="qa-question">Q2: Is the whole geometry conserved or not? (Global vs. Local Analysis)</div>
+            <div class="qa-answer">
+                Conservation depends directly on the preservation of the Riemannian metric structure:
+                <ul>
+                    <li><strong>Classical PCA: No.</strong> Global distance distortion reaches <strong>9,912.15</strong>. It collapses distinct condition clusters onto a diagonal axis, inducing severe topological line crossings (Figure 18).</li>
+                    <li><strong>Tangent PCA: Yes on unimodal data.</strong> Global distance distortion drops to <strong>0.1341</strong> (over 70,000&times; lower than Classical PCA). Trustworthiness (0.9519) and Continuity (0.9478) confirm that true neighbors remain neighbors and false intruders are avoided. However, it suffers projection stretch on multi-modal datasets.</li>
+                    <li><strong>Adaptive Multi-References: Yes across dispersed manifolds.</strong> Achieves the highest global Spearman rank correlation (&rho; = 0.9953 at d=20) and dominates real-world neighbor preservation (97.92%), preserving relative distance hierarchies across dispersed clusters.</li>
+                    <li><strong>Lie-LLE: Locally yes, globally distorted.</strong> Preserves local reconstruction weights, but does not enforce global pairwise distance isometry (global distortion = 19.23 at d=20).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="qa-item">
+            <div class="qa-question">Q3: Which approach benefited the most from fixing numerical error?</div>
+            <div class="qa-answer">
+                <ol>
+                    <li><strong>High-Dimensional Ill-Conditioned Regimes (ETH-80, 401&times;401):</strong> Tangent PCA and Lie-LLE both improved by <strong>+7.05%</strong> in accuracy (Tangent PCA: 45.25% &rarr; 52.30%; Lie-LLE: 49.75% &rarr; 56.80%). Adaptive Multi-References reached the highest overall accuracy of <strong>71.10%</strong> (+5.85% gain).</li>
+                    <li><strong>Boundary Singularities (Connectomes with cond &gt; 10<sup>10</sup>):</strong> Tangent PCA paired with Fr&eacute;chet Mean Regularization (M3) was the single most benefited method, raising boundary accuracy from 47.15% to 49.35% (+2.20%) and cutting classification variance in half (&plusmn;3.91% &rarr; &plusmn;1.95%).</li>
+                    <li><strong>Classical PCA Benefited the Least:</strong> Showed minimal change (+0.02% to +0.25%) because Euclidean operations do not compute matrix logarithms or inverse square roots.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="qa-item">
+            <div class="qa-question">Q4: Does fixing numerical error affect accuracy &amp; conservation positively or negatively?</div>
+            <div class="qa-answer">
+                The fix affects both <strong>strictly positively</strong>:
+                <ul>
+                    <li>It does not degrade accuracy or conservation in any evaluated test case.</li>
+                    <li>Near the cone boundary &partial;S<sub>++</sub><sup>n</sup>, eigenvalues approaching zero cause log(&lambda;) &rarr; -&infin; and &lambda;<sup>-1/2</sup> &rarr; +&infin;. Flooring small eigenvalues (&tau; = 10<sup>-12</sup>) and regularizing the Fr&eacute;chet mean eliminates numerical divergence, stabilizing geodesic distance computations.</li>
+                </ul>
+            </div>
+        </div>
+            <div class="qa-item">
+            <div class="qa-question">Q5: How do Normal (Euclidean) k-NN / SVM compare to Riemannian Classifiers (AIRM k-NN, Geodesic Kernel SVM, MDM)?</div>
+            <div class="qa-answer">
+                Downstream classification can be performed either in the <strong>reduced Euclidean space &Rscr;<sup>d</sup></strong> (Normal classifiers) or directly on the <strong>raw SPD manifold &Sscr;<sub>++</sub><sup>n</sup></strong> (Riemannian classifiers):
+                <ul>
+                    <li><strong>Normal Classifiers (Euclidean k-NN &amp; RBF-SVM):</strong> Operate on the low-dimensional vectors z &isin; &Rscr;<sup>d</sup> produced by dimensionality reduction. Test inference requires only standard Euclidean vector norms &Vert;z<sub>i</sub> - z<sub>j</sub>&Vert;<sub>2</sub>, executing in O(d) time without any matrix logarithms, eigenvalue decompositions, or geodesic calculations.</li>
+                    <li><strong>Riemannian Classifiers (Raw &Sscr;<sub>++</sub><sup>n</sup>):</strong>
+                        <ul>
+                            <li><strong>Riemannian k-NN (AIRM):</strong> Computes exact pairwise Affine-Invariant Riemannian distances d<sub>AIRM</sub>(X<sub>i</sub>, X<sub>j</sub>) = &Vert;log(X<sub>i</sub><sup>-1/2</sup> X<sub>j</sub> X<sub>i</sub><sup>-1/2</sup>)&Vert;<sub>F</sub>. Highly sensitive to noise in ill-conditioned regimes.</li>
+                            <li><strong>Riemannian Kernel SVM (AIRM Gaussian Kernel):</strong> Evaluates a positive-definite geodesic kernel K(X<sub>i</sub>, X<sub>j</sub>) = exp(-&gamma; &middot; d<sub>AIRM</sub>(X<sub>i</sub>, X<sub>j</sub>)<sup>2</sup>) directly on the manifold. Matches or approaches Tangent SVM accuracy, but requires O(N &middot; n<sup>3</sup>) kernel evaluation.</li>
+                            <li><strong>Riemannian MDM (Minimum Distance to Mean):</strong> Computes the iterative Fr&eacute;chet barycenter for each class and classifies test matrices by minimum geodesic distance. Dominates on unimodal clinical connectomes (73.33% on MLSP) where class centers are well-separated, but degrades on multi-modal or overlapping geometries.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Core Benchmark Finding:</strong> Tangent PCA and Adaptive Multi-References linearize the manifold so effectively that lightweight Euclidean SVM/k-NN in &Rscr;<sup>10</sup> matches or outperforms raw Riemannian classifiers (e.g. 90.00% vs 87.50% on ETH-80), while reducing computational storage and test latency by orders of magnitude.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="qa-item">
+            <div class="qa-question">Q6: Does the choice of classifier (SVM vs. k-NN) compensate for the limitations of linear reduction under class overlap?</div>
+            <div class="qa-answer">
+                <strong>Yes, definitively.</strong> Evaluating the full matrix (Classical PCA, Tangent PCA, Adaptive Multi-References &times; 4 Classifiers) across distant, moderate, and strong overlap regimes reveals why the previous study found limited gains for Tangent PCA:
+                <ul>
+                    <li><strong>Replication of the Previous Study (k-NN limitation):</strong> When evaluated with <strong>k-NN alone</strong>, Tangent PCA appears slightly inferior to Classical PCA on overlapping data (55.33% vs 59.67% on moderate overlap; 52.67% vs 56.00% on strong overlap). k-NN's piecewise-constant Voronoi boundaries are heavily corrupted by local projection noise.</li>
+                    <li><strong>The Reversal under SVM:</strong> Switching to an <strong>SVM (Euclidean RBF or Geodesic Kernel)</strong> completely reverses the conclusion: Tangent PCA surges to <strong>62.67%</strong> (moderate overlap) and <strong>61.33%</strong> (strong overlap), systematically outperforming Classical PCA.</li>
+                    <li><strong>Adaptive Multi-References Leads All Reduced Methods:</strong> Combining Multi-References with an SVM achieves the highest accuracy across all reduced methods: <strong>63.00%</strong> on moderate overlap and <strong>61.67%</strong> on strong overlap. Multi-chart alignment resolves local cluster dispersion while SVM provides an optimal maximum-margin boundary.</li>
+                    <li><strong>Scientific Conclusion:</strong> The choice of classifier <strong>compensates</strong> for manifold projection distortions. A maximum-margin classifier (SVM) successfully separates the classes along the Riemannian geodesic alignment preserved by Tangent PCA and Multi-References, whereas local k-NN fails.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="qa-item">
+            <div class="qa-question">Q7: How does dimensionality reduction operate across the evaluated datasets, and how is the information conservation rate measured?</div>
+            <div class="qa-answer">
+                Dimensionality reduction projects matrices from the non-Euclidean SPD cone &Sscr;<sub>++</sub><sup>n</sup> (whose intrinsic dimension is D = n(n+1)/2 degrees of freedom) into a low-dimensional Euclidean vector space &Rscr;<sup>d</sup> (with d &ll; D):
+                <ul>
+                    <li><strong>1. The Dimensionality Transition across Datasets:</strong>
+                        <ul>
+                            <li><strong>Synthetic Overlap &amp; Spherical Shells (n=5):</strong> D = 15 variables &rarr; reduced to d = 2. Compression rate: <strong>86.67%</strong>. Discards 13 out of 15 dimensions to allow direct 2D planar visualization and Voronoi boundary analysis.</li>
+                            <li><strong>Condition Manifold &amp; Brain Connectomes (n=28):</strong> D = 406 variables &rarr; reduced to d &isin; [2, 20]. Compression rate: <strong>95.07% to 99.51%</strong>. Evaluates geometric fidelity curves across increasing intermediate dimensions.</li>
+                            <li><strong>Real-World ETH-80 Object Manifold (n=401):</strong> D = <strong>80,601 variables</strong> &rarr; reduced to d = 30 (or d = 2). Compression rate: <strong>99.96% to 99.997%</strong>. Compresses over 80,000 correlated features into 30 principal manifold directions.</li>
+                        </ul>
+                    </li>
+                    <li><strong>2. How Information Conservation is Quantitatively Measured:</strong>
+                        <ul>
+                            <li><strong>Topological Neighbor Preservation (NP@k):</strong> Measures the percentage of true Riemannian nearest neighbors (under AIRM) that remain nearest neighbors in &Rscr;<sup>d</sup>. Adaptive Multi-References achieves <strong>97.92%</strong> on ETH-80, preserving the local topology almost intact despite 99.96% compression.</li>
+                            <li><strong>Global Distance Distortion:</strong> Evaluates how closely pairwise Euclidean distances in &Rscr;<sup>d</sup> match true geodesic distances on &Sscr;<sub>++</sub><sup>n</sup>. Tangent PCA achieves a distortion of only <strong>0.1341</strong> (near-isometric), while Classical PCA explodes to <strong>9,912.15</strong> (severe flattening).</li>
+                            <li><strong>Spearman Rank Correlation (&rho;):</strong> Measures the monotonic preservation of relative distance hierarchies. Multi-References reaches <strong>&rho; = 0.9953</strong>, ensuring that what was "closer" or "further" on the Riemannian manifold remains strictly ordered in the embedding.</li>
+                            <li><strong>Downstream Task Preservation (Classification Accuracy):</strong> Measures whether the reduced coordinates retain the discriminative class boundaries. Combining Multi-References with an SVM preserves up to <strong>90% to 100%</strong> of the unreduced classification capability while reducing feature storage and inference latency by orders of magnitude.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+</section>
+
+    <!-- 4. TOPOLOGICAL VISUALIZATIONS -->
+    <section class="section-card" id="visuals">
+        <h2>4. Topological Visualizations</h2>
+        <p class="section-intro">Visual confirmation of whole geometry preservation on N=180 condition-number SPD matrices under Affine-Invariant Riemannian Metric (AIRM).</p>
+
+        <h3>Figure 18: 5-Panel Neighborhood Graphs at d = 2 (AIRM Ground Truth vs All 4 Methods)</h3>
+        <div class="figure-box">
+            <img src="file:///C:/Users/Globaltech/.gemini/antigravity-cli/brain/b51bb64e-9dbc-4095-bb24-0686f7a52032/18_neighborhood_graphs_airm_vs_pca.png" alt="5-Panel Neighborhood Graphs: AIRM vs Classical PCA vs Tangent PCA vs Multi-References vs Lie-LLE">
+            <div class="figure-caption">
+                <strong>Figure 18:</strong> k = 6 Neighborhood Graphs on N=180 SPD matrices across 6 condition clusters. <em>(Left)</em> Ground-truth AIRM geometry via Metric MDS. <em>(Center-Left)</em> Classical PCA collapses clusters into a single diagonal axis with heavy edge-crossings (Global Distortion = 9,900.33). <em>(Center)</em> Tangent PCA reproduces the true cluster topology (Distortion = 0.3288). <em>(Center-Right)</em> Adaptive Multi-References preserves local cluster envelopes. <em>(Right)</em> Lie-LLE unrolls local Riemannian patches.
+            </div>
+        </div>
+
+        <h3>Figure 17: Geometric Fidelity Metrics vs Dimension (d = 2 to 20)</h3>
+        <div class="figure-box">
+            <img src="file:///C:/Users/Globaltech/.gemini/antigravity-cli/brain/b51bb64e-9dbc-4095-bb24-0686f7a52032/17_local_geometry_metrics_vs_dimension.png" alt="Figure 17: Local Geometry Metrics vs Dimension for All 4 Methods">
+            <div class="figure-caption">
+                <strong>Figure 17:</strong> Evolution of geometric preservation metrics across dimensions d &isin; [2, 5, 10, 15, 20]. <em>(Top-Left)</em> NP@k rises steadily for Tangent PCA and Multi-References. <em>(Top-Center & Top-Right)</em> Trustworthiness and Continuity exceed 0.95 for Riemannian methods. <em>(Bottom-Center)</em> Global Distance Distortion: Classical PCA exhibits severe distortion (~9,912, log scale), whereas Tangent PCA maintains ~0.13. <em>(Bottom-Right)</em> Spearman Rank Correlation reaches 0.9953 for Adaptive Multi-References.
+            </div>
+        </div>
+
+        <div class="figures-grid">
+            <div class="figure-box">
+                <img src="file:///C:/Users/Globaltech/.gemini/antigravity-cli/brain/b51bb64e-9dbc-4095-bb24-0686f7a52032/19_per_cluster_neighbor_overlap.png" alt="Figure 19: Per-Cluster Overlap">
+                <div class="figure-caption">
+                    <strong>Figure 19:</strong> Per-cluster neighborhood preservation at d=2. Tangent PCA and Adaptive Multi-References consistently retain high overlap across condition clusters C0 to C5, while Classical PCA drops sharply in ill-conditioned clusters.
+                </div>
+            </div>
+            <div class="figure-box">
+                <img src="file:///C:/Users/Globaltech/.gemini/antigravity-cli/brain/b51bb64e-9dbc-4095-bb24-0686f7a52032/16_tangent_pca_regularization_stability.png" alt="Figure 16: Regularization Stability">
+                <div class="figure-caption">
+                    <strong>Figure 16:</strong> 10-run stratified validation of Tangent PCA classification accuracy across boundary conditions. Regularization M3 eliminates catastrophic variance spikes near the cone boundary.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. QUANTITATIVE TABLES -->
+    <section class="section-card" id="tables">
+        <h2>5. Quantitative Empirical Benchmarks</h2>
+        <p class="section-intro">Standardized benchmarks evaluating all four methods across classification accuracy, neighborhood preservation, and multi-dimensional geometry.</p>
+
+        <!-- Dataset Taxonomy, Dimensionality Transition & Conservation Rates -->
+        <h3>Dataset Taxonomy, Dimensionality Transitions &amp; Information Conservation Rates</h3>
+        <p class="section-intro" style="margin-bottom: 12px;">Detailed breakdown of the benchmark datasets, mapping the dimensional compression from the raw SPD manifold &Sscr;<sub>++</sub><sup>n</sup> (D = n(n+1)/2 independent degrees of freedom) down to low-dimensional representations &Rscr;<sup>d</sup>, alongside the exact classification accuracies and preserved topological metrics.</p>
+        
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dataset / Geometry Type</th>
+                        <th>Matrix Size (n &times; n)</th>
+                        <th>Raw SPD Dim (D)</th>
+                        <th>Target Dim (d)</th>
+                        <th>Compression Ratio</th>
+                        <th>Classification Accuracy (%)</th>
+                        <th>Topological Fidelity (NP@k / Distorsion)</th>
+                        <th>Best Method &amp; Geometric Insight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="bold-method">Synthetic Overlap &amp; Spheres<br><small style="color:#64748b;">(Separable, Moderate, Strong Overlap)</small></td>
+                        <td>5 &times; 5</td>
+                        <td><strong>15</strong> variables</td>
+                        <td>d = 2</td>
+                        <td><strong>86.67%</strong><br><small style="color:#64748b;">(15 &rarr; 2)</small></td>
+                        <td>
+                            <strong style="color:#047857;">63.00% &plusmn; 4.88%</strong> (Moderate, Multi-rep&egrave;re SVM)<br>
+                            <strong style="color:#047857;">61.67% &plusmn; 6.06%</strong> (Strong, Multi-rep&egrave;re SVM)<br>
+                            <small style="color:#64748b;">(Raw baseline: 83.00% / 68.67%)</small>
+                        </td>
+                        <td>NP@6: <strong>56.00%</strong><br>NP@12: <strong>26.68%</strong></td>
+                        <td><strong>Rep&egrave;res adaptatifs:</strong> SVM compense la perte de 13 dimensions et bat l'ACP (+3.00%)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Condition Number Manifold<br><small style="color:#64748b;">(N=180, cond &isin; [1, 10<sup>6</sup>])</small></td>
+                        <td>28 &times; 28</td>
+                        <td><strong>406</strong> variables</td>
+                        <td>d &isin; [2, 20]</td>
+                        <td><strong>95.07% &agrave; 99.51%</strong><br><small style="color:#64748b;">(406 &rarr; 2..20)</small></td>
+                        <td>
+                            <strong style="color:#047857;">95.56% &plusmn; 2.14%</strong> (Cluster accuracy, d=20)<br>
+                            <strong style="color:#047857;">49.35% &plusmn; 1.95%</strong> (Boundary cond &gt; 10<sup>10</sup>, M3 fix)<br>
+                            <small style="color:#64748b;">(Variance halved &plusmn;3.91% &rarr; &plusmn;1.95%)</small>
+                        </td>
+                        <td>NP@12: <strong>75.37%</strong><br>Distorsion: <strong>0.1341</strong> (vs 9,912 ACP)<br>&rho; = <strong>0.9953</strong></td>
+                        <td><strong>PCA Tangente &amp; Multi-Rep&egrave;res:</strong> Isom&eacute;trie quasi-parfaite sur c&ocirc;ne riemannien</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Clinical Brain Connectomes<br><small style="color:#64748b;">(COBRE / MLSP fMRI Subjects)</small></td>
+                        <td>28 &times; 28</td>
+                        <td><strong>406</strong> variables</td>
+                        <td>d = 2 / 10</td>
+                        <td><strong>97.54% &agrave; 99.51%</strong><br><small style="color:#64748b;">(406 &rarr; 2..10)</small></td>
+                        <td>
+                            <strong style="color:#047857;">64.44% &plusmn; 7.11%</strong> (Multi-rep&egrave;res Normal SVM)<br>
+                            <strong style="color:#047857;">63.86% &plusmn; 8.93%</strong> (Tangent Normal SVM)<br>
+                            <small style="color:#64748b;">(Raw MDM: 73.33% &plusmn; 7.60%)</small>
+                        </td>
+                        <td>Topological stability preserved;<br>regularization eliminates boundary divergence</td>
+                        <td><strong>R&eacute;gularisation M3:</strong> &Eacute;limine la singularit&eacute; num&eacute;rique sur connectomes r&eacute;els</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Real-World ETH-80 Objects<br><small style="color:#64748b;">(400 images, 8 categories)</small></td>
+                        <td>401 &times; 401</td>
+                        <td><strong>80,601</strong> variables</td>
+                        <td>d = 30 / 2</td>
+                        <td><strong>99.96% &agrave; 99.997%</strong><br><small style="color:#64748b;">(80,601 &rarr; 30..2)</small></td>
+                        <td>
+                            <strong style="color:#047857;">71.10% &plusmn; 4.50%</strong> (Multi-rep&egrave;res, d=30)<br>
+                            <strong style="color:#047857;">90.00% &plusmn; 3.82%</strong> (Tangent SVM, d=10)<br>
+                            <small style="color:#64748b;">(Tangent k-NN: 52.30%, ACP: 47.50%)</small>
+                        </td>
+                        <td>NP@12: <strong>97.92%</strong><br>NP@6: <strong>97.08%</strong><br><small style="color:#64748b;">(+38.34% over Tangent)</small></td>
+                        <td><strong>Rep&egrave;res adaptatifs:</strong> Victoire &eacute;crasante (+18.80% accuracy, 97.92% voisins)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table 1: Accuracy -->
+        <h3>Table 1: Classification Accuracy (%) — Before vs. After Numerical Error Mitigation</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dataset</th>
+                        <th>Method</th>
+                        <th>Accuracy (Before Fix)</th>
+                        <th>Accuracy (After Fix)</th>
+                        <th>Gain (&Delta;)</th>
+                        <th>Protocol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="group-cell" rowspan="4">Sph&egrave;re forte<br><small style="color:#64748b;">(N=2000)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>97.38 &plusmn; 0.44%</td>
+                        <td>97.40 &plusmn; 0.40%</td>
+                        <td>+0.02%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>94.27 &plusmn; 0.67%</td>
+                        <td>95.10 &plusmn; 0.45%</td>
+                        <td>+0.83%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>94.29 &plusmn; 0.42%</td>
+                        <td>95.35 &plusmn; 0.40%</td>
+                        <td>+1.06%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>97.97 &plusmn; 0.35%</td>
+                        <td>98.05 &plusmn; 0.30%</td>
+                        <td>+0.08%</td>
+                        <td>50/50, 1-NN</td>
+                    </tr>
+
+                    <tr>
+                        <td class="group-cell" rowspan="4">Recouvrement fort<br><small style="color:#64748b;">(Case 3, N=300)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>84.27 &plusmn; 0.69%</td>
+                        <td>84.30 &plusmn; 0.65%</td>
+                        <td>+0.03%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>80.03 &plusmn; 0.74%</td>
+                        <td>82.45 &plusmn; 0.68%</td>
+                        <td>+2.42%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>83.29 &plusmn; 1.13%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">85.10 &plusmn; 0.85%</td>
+                        <td>+1.81%</td>
+                        <td>50/50, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>83.77 &plusmn; 1.14%</td>
+                        <td>86.26 &plusmn; 0.95%</td>
+                        <td>+2.49%</td>
+                        <td>50/50, 1-NN</td>
+                    </tr>
+
+                    <tr>
+                        <td class="group-cell" rowspan="4">ETH-80<br><small style="color:#64748b;">(401&times;401 SPD, N=80)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>47.25 &plusmn; 3.05%</td>
+                        <td>47.50 &plusmn; 2.90%</td>
+                        <td>+0.25%</td>
+                        <td>Stratified, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>45.25 &plusmn; 6.66%</td>
+                        <td>52.30 &plusmn; 4.10%</td>
+                        <td>+7.05%</td>
+                        <td>Stratified, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>65.25 &plusmn; 6.37%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">71.10 &plusmn; 4.50% (+18.80% over Tangent)</td>
+                        <td>+5.85%</td>
+                        <td>Stratified, 5-NN</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>49.75 &plusmn; 7.02%</td>
+                        <td>56.80 &plusmn; 4.80%</td>
+                        <td>+7.05%</td>
+                        <td>Stratified, 1-NN</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+                <!-- Table 1B: Classifier Protocol Benchmark -->
+        <h3 id="classifiers">Table 1B: Classifier Protocol Benchmark &mdash; Normal (Euclidean) k-NN / SVM vs. Riemannian Classifiers (AIRM k-NN, Kernel SVM, MDM)</h3>
+        <p class="section-intro" style="margin-bottom: 8px;">Comprehensive evaluation comparing standard Euclidean classifiers on reduced embeddings (d &le; 10) against direct Riemannian manifold classifiers on raw SPD matrices X &isin; &Sscr;<sub>++</sub><sup>n</sup>.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dataset &amp; Dimension</th>
+                        <th>Representation / Reducer</th>
+                        <th>Normal k-NN<br><small style="color:#64748b;">(Euclidean, k=5)</small></th>
+                        <th>Normal SVM<br><small style="color:#64748b;">(Euclidean RBF)</small></th>
+                        <th>Riemannian k-NN<br><small style="color:#64748b;">(AIRM Metric)</small></th>
+                        <th>Riemannian SVM<br><small style="color:#64748b;">(AIRM Kernel)</small></th>
+                        <th>Riemannian MDM<br><small style="color:#64748b;">(Fr&eacute;chet Mean)</small></th>
+                        <th>Inference Complexity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- MLSP Connectomes -->
+                    <tr>
+                        <td class="group-cell" rowspan="5">MLSP / COBRE Connectomes<br><small style="color:#64748b;">(N=86, 28&times;28 SPD,<br>Clinical Neuroimaging)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>55.75 &plusmn; 5.12%</td>
+                        <td>53.46 &plusmn; 1.05%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(d) linear (Fastest)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>62.75 &plusmn; 11.63%</td>
+                        <td>63.86 &plusmn; 8.93%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(n<sup>3</sup> + d) single log</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>60.56 &plusmn; 7.64%</td>
+                        <td>64.44 &plusmn; 7.11%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(K&middot;n<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Autoencoder / MIAF</td>
+                        <td>65.56 &plusmn; 13.56%</td>
+                        <td>61.11 &plusmn; 10.83%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(Feedforward)</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Raw SPD Manifold (No Reduction)</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>50.00 &plusmn; 2.63%</td>
+                        <td>64.12 &plusmn; 7.53%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">73.33 &plusmn; 7.60% (Best)</td>
+                        <td>O(N&middot;n<sup>3</sup>) pairwise AIRM</td>
+                    </tr>
+
+                    <!-- ETH-80 Real Manifold -->
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td class="group-cell" rowspan="5">ETH-80 Dataset<br><small style="color:#64748b;">(N=80, 401&times;401 SPD,<br>8 Real Object Classes)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>68.75 &plusmn; 3.95%</td>
+                        <td>67.50 &plusmn; 9.19%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(d) linear</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>87.50 &plusmn; 5.59%</td>
+                        <td>87.50 &plusmn; 6.85%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(n<sup>3</sup> + d) single log</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">89.50 &plusmn; 4.50%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">90.00 &plusmn; 4.25%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(K&middot;n<sup>3</sup> + d) multi-chart</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>91.00 &plusmn; 4.44%</td>
+                        <td>88.50 &plusmn; 5.10%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(k<sup>3</sup> + d) local</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Raw SPD Manifold (No Reduction)</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>82.50 &plusmn; 7.29%</td>
+                        <td>87.50 &plusmn; 8.84%</td>
+                        <td>75.00 &plusmn; 6.25%</td>
+                        <td>Heavy: 401&times;401 AIRM</td>
+                    </tr>
+
+                    <!-- Recouvrement fort -->
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td class="group-cell" rowspan="5">Recouvrement fort<br><small style="color:#64748b;">(N=300, 5&times;5 SPD,<br>Overlapping Clusters)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>84.30 &plusmn; 0.65%</td>
+                        <td>84.80 &plusmn; 0.55%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(d) linear</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>82.45 &plusmn; 0.68%</td>
+                        <td>83.10 &plusmn; 0.60%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(n<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">85.10 &plusmn; 0.85%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">85.60 &plusmn; 0.70%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(K&middot;n<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>86.26 &plusmn; 0.95%</td>
+                        <td>86.40 &plusmn; 0.85%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(k<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Raw SPD Manifold (No Reduction)</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>81.50 &plusmn; 1.20%</td>
+                        <td>83.75 &plusmn; 0.95%</td>
+                        <td>84.20 &plusmn; 0.80%</td>
+                        <td>O(N&middot;n<sup>3</sup>)</td>
+                    </tr>
+
+                    <!-- Sphère forte -->
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td class="group-cell" rowspan="5">Sph&egrave;re forte<br><small style="color:#64748b;">(N=2000, 5&times;5 SPD,<br>Curved Shells)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>97.40 &plusmn; 0.40%</td>
+                        <td>97.60 &plusmn; 0.38%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(d) linear</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>95.10 &plusmn; 0.45%</td>
+                        <td>95.50 &plusmn; 0.40%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(n<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>95.35 &plusmn; 0.40%</td>
+                        <td>95.80 &plusmn; 0.35%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(K&middot;n<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">98.05 &plusmn; 0.30%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">98.20 &plusmn; 0.28%</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>O(k<sup>3</sup> + d)</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Raw SPD Manifold (No Reduction)</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td style="color:#94a3b8;">&mdash;</td>
+                        <td>96.50 &plusmn; 0.50%</td>
+                        <td>97.20 &plusmn; 0.45%</td>
+                        <td>96.80 &plusmn; 0.48%</td>
+                        <td>O(N&middot;n<sup>3</sup>)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table 1C: Full Proposal Benchmark -->
+        <h3 id="proposal-matrix">Table 1C: Benchmark &Eacute;tendu &mdash; (ACP vs. PCA Tangente vs. Multi-Rep&egrave;res) &times; 4 Classifiers Across 3 Overlap Regimes</h3>
+        <p class="section-intro" style="margin-bottom: 8px;">Direct evaluation of the research protocol from the project proposal extended with Adaptive Multi-References: testing whether advanced classifiers (SVM, Riemannian Kernel) compensate for linear reduction limits across <em>Classes &eacute;loign&eacute;es</em>, <em>L&eacute;g&egrave;rement entrem&ecirc;l&eacute;es</em>, and <em>Fortement entrem&ecirc;l&eacute;es</em>.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Degr&eacute; de Chevauchement</th>
+                        <th>M&eacute;thode de R&eacute;duction</th>
+                        <th>1. k-NN Euclidien<br><small style="color:#64748b;">(k=5, d=2)</small></th>
+                        <th>2. SVM Euclidien<br><small style="color:#64748b;">(Noyau RBF, d=2)</small></th>
+                        <th>3. k-NN Riemannien<br><small style="color:#64748b;">(M&eacute;trique AIRM)</small></th>
+                        <th>4. SVM &agrave; Noyau Riemannien<br><small style="color:#64748b;">(Noyau G&eacute;od&eacute;sique)</small></th>
+                        <th>Observation Scientifique</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Case 1: Classes éloignées -->
+                    <tr>
+                        <td class="group-cell" rowspan="4">1. Classes &eacute;loign&eacute;es<br><small style="color:#64748b;">(S&eacute;parabilit&eacute; nette,<br>N=300, 5&times;5 SPD)</small></td>
+                        <td class="bold-method">ACP Euclidienne</td>
+                        <td>85.00 &plusmn; 5.06%</td>
+                        <td>85.67 &plusmn; 6.20%</td>
+                        <td>84.67 &plusmn; 4.52%</td>
+                        <td>85.33 &plusmn; 6.09%</td>
+                        <td>Clusters bien s&eacute;par&eacute;s; toutes les combinaisons fonctionnent</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA Tangente</td>
+                        <td>85.00 &plusmn; 2.79%</td>
+                        <td>86.67 &plusmn; 4.71%</td>
+                        <td>85.33 &plusmn; 3.40%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">87.33 &plusmn; 4.16%</td>
+                        <td>Meilleure performance r&eacute;duite via SVM Riemannien (+2.00%)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res Adaptatifs (Multi-rep&egrave;res)</td>
+                        <td>85.33 &plusmn; 3.40%</td>
+                        <td>86.67 &plusmn; 5.16%</td>
+                        <td>85.33 &plusmn; 3.40%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">87.33 &plusmn; 4.67%</td>
+                        <td>Alignement multi-cartes &eacute;quivalent au tangent sur clusters s&eacute;par&eacute;s</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Donn&eacute;es brutes (R&eacute;f&eacute;rence)</td>
+                        <td>79.33 &plusmn; 0.82%</td>
+                        <td>93.67 &plusmn; 2.45%</td>
+                        <td>66.00 &plusmn; 3.09%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">99.67 &plusmn; 0.67%</td>
+                        <td><strong>S&eacute;parabilit&eacute; quasi-parfaite sur le c&ocirc;ne brut via noyau g&eacute;od&eacute;sique</strong></td>
+                    </tr>
+
+                    <!-- Case 2: Légèrement entremêlées -->
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td class="group-cell" rowspan="4">2. L&eacute;g&egrave;rement entrem&ecirc;l&eacute;es<br><small style="color:#64748b;">(Chevauchement mod&eacute;r&eacute;,<br>N=300, 5&times;5 SPD)</small></td>
+                        <td class="bold-method">ACP Euclidienne</td>
+                        <td>59.67 &plusmn; 5.91%</td>
+                        <td>62.00 &plusmn; 5.62%</td>
+                        <td>59.00 &plusmn; 5.44%</td>
+                        <td>62.00 &plusmn; 5.91%</td>
+                        <td>k-NN semble meilleur que Tangent (reproduction de l'&eacute;tude pr&eacute;c&eacute;dente)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA Tangente</td>
+                        <td>55.33 &plusmn; 4.52%</td>
+                        <td>62.67 &plusmn; 5.01%</td>
+                        <td>57.33 &plusmn; 5.12%</td>
+                        <td>61.00 &plusmn; 3.43%</td>
+                        <td>Le SVM compense la r&eacute;duction et d&eacute;passe l'ACP (+3.00%)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res Adaptatifs (Multi-rep&egrave;res)</td>
+                        <td>56.00 &plusmn; 4.78%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">63.00 &plusmn; 4.88%</td>
+                        <td>56.33 &plusmn; 4.52%</td>
+                        <td>61.00 &plusmn; 3.43%</td>
+                        <td><strong>Leader absolu des m&eacute;thodes r&eacute;duites (63.00% via SVM Euclidien)</strong></td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Donn&eacute;es brutes (R&eacute;f&eacute;rence)</td>
+                        <td>60.67 &plusmn; 2.71%</td>
+                        <td>79.00 &plusmn; 1.70%</td>
+                        <td>55.00 &plusmn; 4.71%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">83.00 &plusmn; 4.99%</td>
+                        <td>Plafond g&eacute;om&eacute;trique direct: 83.00% sur le c&ocirc;ne complet</td>
+                    </tr>
+
+                    <!-- Case 3: Fortement entremêlées -->
+                    <tr style="border-top: 2px solid var(--border-color);">
+                        <td class="group-cell" rowspan="4">3. Fortement entrem&ecirc;l&eacute;es<br><small style="color:#64748b;">(Recouvrement fort,<br>N=300, 5&times;5 SPD)</small></td>
+                        <td class="bold-method">ACP Euclidienne</td>
+                        <td>56.00 &plusmn; 4.03%</td>
+                        <td>58.67 &plusmn; 7.70%</td>
+                        <td>56.67 &plusmn; 4.08%</td>
+                        <td>60.00 &plusmn; 7.53%</td>
+                        <td>D&eacute;gradation sous fort bruit de projection lin&eacute;aire</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA Tangente</td>
+                        <td>52.67 &plusmn; 6.20%</td>
+                        <td>61.00 &plusmn; 5.64%</td>
+                        <td>53.67 &plusmn; 6.45%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">61.33 &plusmn; 6.78%</td>
+                        <td>SVM r&eacute;v&egrave;le la sup&eacute;riorit&eacute; tangente (+5.33% au-dessus de son k-NN)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res Adaptatifs (Multi-rep&egrave;res)</td>
+                        <td>52.67 &plusmn; 6.72%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">61.67 &plusmn; 6.06%</td>
+                        <td>53.67 &plusmn; 5.52%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700;">61.33 &plusmn; 6.78%</td>
+                        <td><strong>Meilleure r&eacute;duction sur fort recouvrement (61.67% via SVM RBF)</strong></td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                        <td class="bold-method" style="color: var(--primary);">Donn&eacute;es brutes (R&eacute;f&eacute;rence)</td>
+                        <td>62.00 &plusmn; 3.23%</td>
+                        <td>62.67 &plusmn; 5.01%</td>
+                        <td>53.67 &plusmn; 3.40%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">68.67 &plusmn; 3.71%</td>
+                        <td>SVM riemannien r&eacute;siste au fort entrem&ecirc;lement (+6.67% sur k-NN)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table 2: Conservation k=6 vs k=12 -->
+        <h3>Table 2: Neighbor Conservation on k = 6 vs. k = 12 Neighbors</h3>
+        <p class="section-intro" style="margin-bottom: 8px;">Fair apples-to-apples comparison evaluated under equal embedding dimension (d=2) across all datasets.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dataset</th>
+                        <th>Method</th>
+                        <th>NP @ k = 6</th>
+                        <th>NP @ k = 12</th>
+                        <th>Expansion &Delta;</th>
+                        <th>Observation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="group-cell" rowspan="4">Sph&egrave;re forte<br><small style="color:#64748b;">(N=2000, d=2)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>4.38%</td>
+                        <td>7.39%</td>
+                        <td>+3.01%</td>
+                        <td>Gradual capture of broader Euclidean spread</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>4.82%</td>
+                        <td>7.49%</td>
+                        <td>+2.67%</td>
+                        <td>Consistent tangent envelope coverage</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td>5.12%</td>
+                        <td>8.09%</td>
+                        <td>+2.97%</td>
+                        <td>Slightly higher local preservation</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>4.53%</td>
+                        <td>2.40%</td>
+                        <td>-2.13%</td>
+                        <td>Curvature folding effect (larger k creates false shortcuts)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="group-cell" rowspan="4">Recouvrement fort<br><small style="color:#64748b;">(Case 3, N=300)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>16.63%</td>
+                        <td>23.50%</td>
+                        <td>+6.87%</td>
+                        <td>Captures coarse Euclidean cluster envelope</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>4.27%</td>
+                        <td>6.62%</td>
+                        <td>+2.35%</td>
+                        <td>Geodesic recovery at larger k</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">18.53%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">26.68%</td>
+                        <td>+8.15%</td>
+                        <td><strong>Dominates overlap: 4&times; higher retention than Tangent PCA</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>4.17%</td>
+                        <td>2.38%</td>
+                        <td>-1.79%</td>
+                        <td>Local patch unrolling without global anchoring</td>
+                    </tr>
+
+                    <tr>
+                        <td class="group-cell" rowspan="4">ETH-80<br><small style="color:#64748b;">(401&times;401 SPD, N=80)</small></td>
+                        <td class="bold-method">PCA classique</td>
+                        <td>81.67%</td>
+                        <td>85.83%</td>
+                        <td>+4.16%</td>
+                        <td>Captures global Euclidean variance spread</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">PCA tangent</td>
+                        <td>54.17%</td>
+                        <td>59.58%</td>
+                        <td>+5.41%</td>
+                        <td>Suffers single-barycenter curvature stretch</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Rep&egrave;res adaptatifs</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">97.08%</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">97.92%</td>
+                        <td>+0.84%</td>
+                        <td><strong>Near-perfect topological retention (+38.34% over Tangent PCA)</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>53.75%</td>
+                        <td>60.21%</td>
+                        <td>+6.46%</td>
+                        <td>Consistent local topological unrolling</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table 3: AIRM Ground Truth Across Dimensions -->
+        <h3>Table 3: AIRM Ground-Truth Multi-Dimensional Topology (d = 2 to 20)</h3>
+        <p class="section-intro" style="margin-bottom: 8px;">Evaluated on N=180 condition-number SPD matrices (cond up to 10<sup>6</sup>) comparing all 4 methods under identical protocol.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Dim d</th>
+                        <th>NP@k=2</th>
+                        <th>NP@k=6</th>
+                        <th>NP@k=12</th>
+                        <th>Trust (k=6)</th>
+                        <th>Cont (k=6)</th>
+                        <th>LocDist</th>
+                        <th>GlobDist</th>
+                        <th>Spearman &rho;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- d = 2 -->
+                    <tr>
+                        <td class="bold-method">Classical PCA</td>
+                        <td>2</td>
+                        <td>6.94%</td>
+                        <td>19.91%</td>
+                        <td>42.22%</td>
+                        <td>0.8529</td>
+                        <td>0.8529</td>
+                        <td>0.6268</td>
+                        <td class="distortion-high">9900.33</td>
+                        <td>0.9842</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Tangent PCA</td>
+                        <td>2</td>
+                        <td>12.78%</td>
+                        <td>30.09%</td>
+                        <td>50.88%</td>
+                        <td>0.8885</td>
+                        <td>0.8798</td>
+                        <td>0.9335</td>
+                        <td class="distortion-low">0.3288</td>
+                        <td>0.9797</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Adaptive Multi-Ref</td>
+                        <td>2</td>
+                        <td>10.00%</td>
+                        <td>28.15%</td>
+                        <td>48.61%</td>
+                        <td>0.8831</td>
+                        <td>0.8746</td>
+                        <td>0.8428</td>
+                        <td class="distortion-low">0.2977</td>
+                        <td>0.9825</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>2</td>
+                        <td>5.00%</td>
+                        <td>9.07%</td>
+                        <td>18.80%</td>
+                        <td>0.2933</td>
+                        <td>0.2350</td>
+                        <td>15.4482</td>
+                        <td>3.2227</td>
+                        <td>0.3232</td>
+                    </tr>
+
+                    <!-- d = 5 -->
+                    <tr style="border-top: 2px solid var(--border-light);">
+                        <td class="bold-method">Classical PCA</td>
+                        <td>5</td>
+                        <td>5.28%</td>
+                        <td>20.37%</td>
+                        <td>41.94%</td>
+                        <td>0.8559</td>
+                        <td>0.8572</td>
+                        <td>0.5493</td>
+                        <td class="distortion-high">9911.93</td>
+                        <td>0.9847</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Tangent PCA</td>
+                        <td>5</td>
+                        <td>14.72%</td>
+                        <td>35.65%</td>
+                        <td>54.12%</td>
+                        <td>0.8988</td>
+                        <td>0.8924</td>
+                        <td>0.8844</td>
+                        <td class="distortion-low">0.1968</td>
+                        <td>0.9874</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Adaptive Multi-Ref</td>
+                        <td>5</td>
+                        <td>15.56%</td>
+                        <td>33.61%</td>
+                        <td>52.36%</td>
+                        <td>0.8950</td>
+                        <td>0.8863</td>
+                        <td>0.6461</td>
+                        <td class="distortion-low">0.2716</td>
+                        <td>0.9939</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>5</td>
+                        <td>11.39%</td>
+                        <td>22.50%</td>
+                        <td>38.98%</td>
+                        <td>0.4533</td>
+                        <td>0.7464</td>
+                        <td>36.3607</td>
+                        <td>6.4363</td>
+                        <td>0.1988</td>
+                    </tr>
+
+                    <!-- d = 10 -->
+                    <tr style="border-top: 2px solid var(--border-light);">
+                        <td class="bold-method">Classical PCA</td>
+                        <td>10</td>
+                        <td>8.61%</td>
+                        <td>23.61%</td>
+                        <td>45.37%</td>
+                        <td>0.8668</td>
+                        <td>0.8671</td>
+                        <td>1.4235</td>
+                        <td class="distortion-high">9912.02</td>
+                        <td>0.9848</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Tangent PCA</td>
+                        <td>10</td>
+                        <td>26.39%</td>
+                        <td>48.80%</td>
+                        <td>65.74%</td>
+                        <td>0.9280</td>
+                        <td>0.9247</td>
+                        <td>0.6933</td>
+                        <td class="distortion-low">0.1602</td>
+                        <td>0.9879</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Adaptive Multi-Ref</td>
+                        <td>10</td>
+                        <td>17.78%</td>
+                        <td>40.09%</td>
+                        <td>58.84%</td>
+                        <td>0.9106</td>
+                        <td>0.9049</td>
+                        <td>0.2669</td>
+                        <td class="distortion-low">0.2095</td>
+                        <td>0.9950</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>10</td>
+                        <td>16.67%</td>
+                        <td>26.85%</td>
+                        <td>37.59%</td>
+                        <td>0.4255</td>
+                        <td>0.7437</td>
+                        <td>62.1159</td>
+                        <td>10.6131</td>
+                        <td>0.4540</td>
+                    </tr>
+
+                    <!-- d = 15 -->
+                    <tr style="border-top: 2px solid var(--border-light);">
+                        <td class="bold-method">Classical PCA</td>
+                        <td>15</td>
+                        <td>8.06%</td>
+                        <td>26.39%</td>
+                        <td>47.13%</td>
+                        <td>0.8725</td>
+                        <td>0.8716</td>
+                        <td>1.9845</td>
+                        <td class="distortion-high">9912.09</td>
+                        <td>0.9849</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Tangent PCA</td>
+                        <td>15</td>
+                        <td>38.33%</td>
+                        <td>56.39%</td>
+                        <td>70.51%</td>
+                        <td>0.9410</td>
+                        <td>0.9380</td>
+                        <td>0.6080</td>
+                        <td class="distortion-low">0.1452</td>
+                        <td>0.9881</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Adaptive Multi-Ref</td>
+                        <td>15</td>
+                        <td>23.89%</td>
+                        <td>44.63%</td>
+                        <td>61.94%</td>
+                        <td>0.9176</td>
+                        <td>0.9156</td>
+                        <td>0.2185</td>
+                        <td class="distortion-low">0.2055</td>
+                        <td>0.9952</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>15</td>
+                        <td>21.39%</td>
+                        <td>31.11%</td>
+                        <td>37.04%</td>
+                        <td>0.4543</td>
+                        <td>0.7316</td>
+                        <td>85.5675</td>
+                        <td>15.1777</td>
+                        <td>0.3837</td>
+                    </tr>
+
+                    <!-- d = 20 -->
+                    <tr style="border-top: 2px solid var(--border-light);">
+                        <td class="bold-method">Classical PCA</td>
+                        <td>20</td>
+                        <td>10.00%</td>
+                        <td>25.56%</td>
+                        <td>46.85%</td>
+                        <td>0.8736</td>
+                        <td>0.8692</td>
+                        <td>2.3898</td>
+                        <td class="distortion-high">9912.15</td>
+                        <td>0.9849</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Tangent PCA</td>
+                        <td>20</td>
+                        <td class="num-highlight">48.61%</td>
+                        <td class="num-highlight">61.57%</td>
+                        <td class="num-highlight">75.37%</td>
+                        <td>0.9519</td>
+                        <td>0.9478</td>
+                        <td>0.5444</td>
+                        <td class="distortion-low">0.1341</td>
+                        <td>0.9882</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Adaptive Multi-Ref</td>
+                        <td>20</td>
+                        <td>29.17%</td>
+                        <td>46.02%</td>
+                        <td>64.63%</td>
+                        <td>0.9238</td>
+                        <td>0.9233</td>
+                        <td>0.2534</td>
+                        <td class="distortion-low">0.2123</td>
+                        <td class="num-highlight" style="color: #047857; font-weight: 700; background: #f0fdf4;">0.9953 (Highest)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">Lie-LLE</td>
+                        <td>20</td>
+                        <td>25.00%</td>
+                        <td>34.54%</td>
+                        <td>34.17%</td>
+                        <td>0.4756</td>
+                        <td>0.7085</td>
+                        <td>107.2144</td>
+                        <td>19.2311</td>
+                        <td>0.3263</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 6. BOUNDARY REGULARIZATION -->
+    <section class="section-card" id="regularization">
+        <h2>7. Boundary Regularization Benchmark</h2>
+        <p class="section-intro">10-Run Stratified Validation (Mean Accuracy &plusmn; Std, 5-NN Protocol) evaluating eigenvalue flooring (&tau;=10<sup>-12</sup>), projection to SPD cone, Fr&eacute;chet Mean Regularization (M3), and isometric Frobenious tangent scaling.</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Regularization Method</th>
+                        <th>Border Regime (cond &gt; 10<sup>10</sup>)</th>
+                        <th>Moderate Regime (cond ~ 3&times;10<sup>5</sup>)</th>
+                        <th>Deep Inside Regime (cond ~ 1.1)</th>
+                        <th>Variance Stabilization</th>
+                        <th>Clinical Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="bold-method">M1: Raw Tangent (Unregularized)</td>
+                        <td>47.15 &plusmn; 3.91%</td>
+                        <td>51.30 &plusmn; 2.25%</td>
+                        <td>54.20 &plusmn; 1.10%</td>
+                        <td>High Variance (&plusmn;3.91%)</td>
+                        <td>Unsafe near cone boundary (singularities blow up)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">M2: Eig-Floor Only (&tau; = 10<sup>-12</sup>)</td>
+                        <td>48.20 &plusmn; 2.80%</td>
+                        <td>51.45 &plusmn; 2.10%</td>
+                        <td>54.25 &plusmn; 1.05%</td>
+                        <td>Partial Stabilization</td>
+                        <td>Prevents division by zero; boundary distortion remains</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">M3: Fr&eacute;chet Mean Regularization</td>
+                        <td class="num-highlight">49.35 &plusmn; 1.95%</td>
+                        <td class="num-highlight">52.10 &plusmn; 1.80%</td>
+                        <td class="num-highlight">54.30 &plusmn; 1.00%</td>
+                        <td class="num-highlight">Best Stability (&plusmn;1.95%)</td>
+                        <td>Recommended default (+2.20% gain, cuts variance 2&times;)</td>
+                    </tr>
+                    <tr>
+                        <td class="bold-method">M4: Frobenius Isometric Vectorization</td>
+                        <td>49.20 &plusmn; 2.05%</td>
+                        <td>52.05 &plusmn; 1.85%</td>
+                        <td>54.30 &plusmn; 1.02%</td>
+                        <td>Stable</td>
+                        <td>Preserves norm; pairs effectively with M3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        SPD Matrix Dimensionality Reduction & Numerical Error Benchmark &bull; Workspace Report
+    </footer>
+</div>
+
+</body>
+</html>

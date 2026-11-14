@@ -185,3 +185,29 @@ The figures are saved as `figures/14_spherical_geometries_modere.png` and
 Benchmark terminal output now reports accuracy and six-neighbour preservation
 as percentages. The CSV files contain `Accuracy (%)`, `Accuracy std (%)`, and
 `Neighbours preserved (%)` for direct comparison.
+
+## Project Proposal Benchmark: (ACP vs. Tangent PCA vs. Multi-References) &times; 4 Classifiers
+
+In accordance with the internship research proposal (*"Réduction de dimension dans l'espace SPD: application aux images médicales du cerveau"*), the repository evaluates dimensionality reduction methods paired with four classifiers across three class overlap regimes (*Classes éloignées*, *Légèrement entremêlées*, *Fortement entremêlées*):
+
+1. **Euclidean k-NN** ($k=5$, Euclidean distance $\|z_1 - z_2\|_2$)
+2. **Euclidean SVM** (RBF kernel on $\mathbb{R}^d$)
+3. **Riemannian k-NN** (AIRM geodesic distance $d_{\text{AIRM}}$)
+4. **Riemannian Kernel SVM** (Geodesic Gaussian kernel $K(X_1, X_2) = \exp(-\gamma d_{\text{AIRM}}^2)$)
+
+To run the complete proposal benchmark across all 5-fold cross-validation splits:
+
+```bash
+python scripts/benchmark_project_proposal_matrix.py
+```
+
+Outputs are saved to `proposal_full_reduction_classifier_matrix.csv`.
+
+### Interactive Standalone HTML Report
+
+The comprehensive benchmark report is available in `SPD_results_report.html`. It provides:
+- Comparative judgements (where each approach excels and where it fails)
+- Synthesis Matrix across all 4 methods
+- Methodological answers on neighborhood parameter $k$, global vs. local geometry preservation, and numerical error mitigation
+- Interactive tables with dimensional transitions ($D \to d$) and information conservation metrics
+- 5-panel neighborhood topological graphs and metric evolution curves vs. dimension ($d \in [2, 20]$).

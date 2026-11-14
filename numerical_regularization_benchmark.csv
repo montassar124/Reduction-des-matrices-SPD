@@ -1,0 +1,5 @@
+Method,A: Border of Cone_Mean,A: Border of Cone_Std,B: Moderate Distance_Mean,B: Moderate Distance_Std,C: Deep Inside Cone_Mean,C: Deep Inside Cone_Std
+Baseline,47.15,3.91,51.35,4.39,49.75,4.22
+M1 DiagLoad,47.5,4.05,48.45,3.57,49.7,4.29
+M2 EigFloor,47.5,3.98,48.9,2.44,49.75,4.22
+M3 MeanReg,49.35,2.04,50.9,3.52,49.75,4.22
