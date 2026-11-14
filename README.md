@@ -37,16 +37,19 @@ Each method produces a 2-D embedding and is evaluated with 10 stratified
 
 ## Modular project structure
 
-The reusable implementation is now separated from the presentation notebook:
+The repository is organized into dedicated directories for scripts, library code, notebooks, reports, benchmarks, and data:
 
 ```text
-spd_reduction/
-  data.py          # CSV loading, symmetric reconstruction, exp/log SPD maps
-  pca_methods.py   # Euclidean PCA and tangent PCA
-  autoencoder.py   # autoencoder and MIAF models/training
-  evaluation.py    # repeated stratified kNN evaluation
-scripts/
-  run_spd_experiments.py
+Reduction-des-matrices-SPD/
+├── data/            # Pre-generated synthetic SPD datasets (.npz)
+├── figures/         # Benchmark plots, topological graphs, and comparison charts
+├── notebooks/       # Jupyter notebooks (final.ipynb, numerical_error.ipynb, etc.)
+├── papers/          # Reference research papers (PDF)
+├── reports/         # Interactive HTML benchmark reports (SPD_results_report.html)
+├── results/         # Empirical benchmark results (.csv)
+├── scripts/         # Reusable experiment runners and benchmark scripts
+├── spd_reduction/   # Core Python library
+└── train/           # Geomstats connectome training data (train_FNC.csv, labels)
 ```
 
 Run the complete modular experiment from the repository root with:
@@ -201,11 +204,11 @@ To run the complete proposal benchmark across all 5-fold cross-validation splits
 python scripts/benchmark_project_proposal_matrix.py
 ```
 
-Outputs are saved to `proposal_full_reduction_classifier_matrix.csv`.
+Outputs are saved to `results/proposal_full_reduction_classifier_matrix.csv`.
 
 ### Interactive Standalone HTML Report
 
-The comprehensive benchmark report is available in `SPD_results_report.html`. It provides:
+The comprehensive benchmark report is available in `reports/SPD_results_report.html`. It provides:
 - Comparative judgements (where each approach excels and where it fails)
 - Synthesis Matrix across all 4 methods
 - Methodological answers on neighborhood parameter $k$, global vs. local geometry preservation, and numerical error mitigation

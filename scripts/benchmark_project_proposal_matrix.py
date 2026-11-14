@@ -400,12 +400,14 @@ def run_benchmark():
     df_results = pd.DataFrame(all_rows)
     scratch_csv = Path(r"C:\Users\Globaltech\.gemini\antigravity-cli\brain\b51bb64e-9dbc-4095-bb24-0686f7a52032\scratch\proposal_full_reduction_classifier_matrix.csv")
     df_results.to_csv(scratch_csv, index=False)
-    csv_path = ROOT / "proposal_full_reduction_classifier_matrix.csv"
+    csv_dir = ROOT / "results"
+    csv_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = csv_dir / "proposal_full_reduction_classifier_matrix.csv"
     try:
         df_results.to_csv(csv_path, index=False)
         print(f"\nAll results saved to {csv_path}")
     except Exception as e:
-        print(f"Could not write directly to workspace root ({e}), saved to {scratch_csv}")
+        print(f"Could not write to {csv_path} ({e}), saved to {scratch_csv}")
     return df_results
 
 if __name__ == "__main__":
