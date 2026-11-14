@@ -15,8 +15,8 @@ import torch
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "ETH-80"
-RESULTS = ROOT / "eth80_spd_results.csv"
+DATA = ROOT / "data" / "ETH-80" if (ROOT / "data" / "ETH-80").exists() else ROOT / "ETH-80"
+RESULTS = ROOT / "results" / "eth80_spd_results.csv"
 IMAGE_SIZE = (20, 20)
 SEED = 0
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

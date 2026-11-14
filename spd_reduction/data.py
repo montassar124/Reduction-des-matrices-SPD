@@ -25,10 +25,16 @@ def symmetric_upper_vectors(matrices: np.ndarray) -> np.ndarray:
 
 
 def load_connectomes(
-    data_dir: str | Path = "train",
+    data_dir: str | Path = "data/train",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load Geomstats connectome vectors, IDs, and class labels."""
     data_dir = Path(data_dir)
+    if not (data_dir / "train_FNC.csv").exists():
+        root = Path(__file__).resolve().parents[1]
+        for candidate in [root / "data" / "train", root / "train", data_dir.parent / "data" / "train", data_dir / "train"]:
+            if (candidate / "train_FNC.csv").exists():
+                data_dir = candidate
+                break
     fnc = pd.read_csv(data_dir / "train_FNC.csv")
     labels = pd.read_csv(data_dir / "train_labels.csv")
     if "Id" not in fnc or "Class" not in labels:

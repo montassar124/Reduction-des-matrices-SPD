@@ -2,25 +2,25 @@
 
 ## Geomstats connectome data
 
-The files in `train/` are the official connectome training data distributed
+The files in `data/train/` are the official connectome training data distributed
 with [geomstats](https://github.com/geomstats/geomstats). Each row contains
 378 upper-triangular entries, which represent a 28 x 28 connectome.
 
 The raw connectomes are correlation matrices and are not automatically SPD.
-`prepare_spd_data.py` constructs a symmetric zero-diagonal matrix from each
+`scripts/prepare_spd_data.py` constructs a symmetric zero-diagonal matrix from each
 row and applies the matrix exponential. Since the exponential of a real
 symmetric matrix is strictly positive definite, the generated
-`train/train_spd.npy` array contains SPD matrices.
+`data/train/train_spd.npy` array contains SPD matrices.
 
 Install the runtime dependencies and generate the matrices with:
 
 ```text
 python -m pip install numpy pandas scipy
-python prepare_spd_data.py
+python scripts/prepare_spd_data.py
 ```
 
 The geomstats repository provides the training files, but it does not include
-the 119,748-row Kaggle test file expected by `final.ipynb`. That test file must
+the 119,748-row Kaggle test file expected by `notebooks/final.ipynb`. That test file must
 be obtained separately; it should not be fabricated from the training data.
 
 The final notebook also contains a subject-level comparison using the 86
@@ -33,7 +33,7 @@ training subjects:
 
 Each method produces a 2-D embedding and is evaluated with 10 stratified
 80/20 splits and 5-nearest-neighbour classification. Results are saved to
-`spd_subject_reduction_results.csv`.
+`results/spd_subject_reduction_results.csv`.
 
 ## Modular project structure
 
@@ -41,15 +41,18 @@ The repository is organized into dedicated directories for scripts, library code
 
 ```text
 Reduction-des-matrices-SPD/
-├── data/            # Pre-generated synthetic SPD datasets (.npz)
+├── data/            # Datasets: Connectomes (train/), ETH-80, and synthetic cases (.npz)
+│   ├── ETH-80/      # 8-class object image dataset
+│   ├── train/       # Connectome training data (train_FNC.csv, train_labels.csv)
+│   ├── paper_synthetic_spd_cases.npz
+│   └── synthetic_geometry_cases.npz
 ├── figures/         # Benchmark plots, topological graphs, and comparison charts
 ├── notebooks/       # Jupyter notebooks (final.ipynb, numerical_error.ipynb, etc.)
 ├── papers/          # Reference research papers (PDF)
 ├── reports/         # Interactive HTML benchmark reports (SPD_results_report.html)
 ├── results/         # Empirical benchmark results (.csv)
-├── scripts/         # Reusable experiment runners and benchmark scripts
-├── spd_reduction/   # Core Python library
-└── train/           # Geomstats connectome training data (train_FNC.csv, labels)
+├── scripts/         # Reusable experiment runners and data scripts
+└── spd_reduction/   # Core Python library
 ```
 
 Run the complete modular experiment from the repository root with:

@@ -16,7 +16,7 @@ from spd_reduction.data import vectors_to_symmetric
 
 
 ROOT = Path(__file__).resolve().parent
-TRAIN_DIR = ROOT / "train"
+TRAIN_DIR = ROOT / "data" / "train" if (ROOT / "data" / "train").exists() else (ROOT.parent / "data" / "train" if (ROOT.parent / "data" / "train").exists() else ROOT / "train")
 FNC_PATH = TRAIN_DIR / "train_FNC.csv"
 LABELS_PATH = TRAIN_DIR / "train_labels.csv"
 OUTPUT_PATH = TRAIN_DIR / "train_spd.npy"
