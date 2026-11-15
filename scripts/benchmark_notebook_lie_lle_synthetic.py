@@ -1,6 +1,11 @@
 ﻿"""Compare the friend's notebook Lie-LLE workflow on synthetic SPD cases."""
 
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import pandas as pd
@@ -19,7 +24,9 @@ from spd_reduction.local_geometry import matrix_exp_symmetric, matrix_log_spd
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RESULTS = ROOT / "synthetic_notebook_lie_lle_benchmark.csv"
+SCRATCH = Path.home() / ".gemini" / "antigravity-cli" / "brain" / "b51bb64e-9dbc-4095-bb24-0686f7a52032" / "scratch"
+SCRATCH.mkdir(parents=True, exist_ok=True)
+RESULTS = SCRATCH / "synthetic_notebook_lie_lle_benchmark.csv"
 RNG = np.random.default_rng(42)
 
 
