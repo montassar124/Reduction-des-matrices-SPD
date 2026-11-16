@@ -1,0 +1,7 @@
+Case,Method,Mean accuracy,Std,Matrices,Dimension,Neighbors
+Case 1 - distant,PCA,1.0,0.0,2000,5,0
+Case 1 - distant,LLE,1.0,0.0,2000,5,12
+Case 2 - moderate overlap,PCA,0.97,0.0024494897427831805,2000,5,0
+Case 2 - moderate overlap,LLE,0.8146000000000001,0.10274356427533551,2000,5,12
+Case 3 - strong overlap,PCA,0.8003,0.007403377607551846,2000,5,0
+Case 3 - strong overlap,LLE,0.5689,0.04104253890782098,2000,5,12

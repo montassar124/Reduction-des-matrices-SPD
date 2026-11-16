@@ -1,9 +1,5 @@
-with open('reports/poster_spd_ensi.html', 'r', encoding='utf-8') as f:
+with open('reports/poster_spd_ensi.html', encoding='utf-8') as f:
     lines = f.readlines()
 
-for i in range(514, 595):
-    line = lines[i]
-    if line.strip().startswith('data:image'):
-        print(f"{i+1}: [IMAGE BASE64 TRUNCATED]")
-    else:
-        print(f"{i+1}: {line[:120]}", end='')
+for i in range(514, min(len(lines), 625)):
+    print(lines[i], end="")

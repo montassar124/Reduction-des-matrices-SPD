@@ -15,7 +15,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
-ROOT = Path(r"C:\Users\Globaltech\Reduction-des-matrices-SPD")
+ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "figures"
 ARTIFACT_DIR = Path(r"C:\Users\Globaltech\.gemini\antigravity\brain\2343b67e-d6f6-4df9-8288-56700b5d343e")
 REPORTS_DIR = ROOT / "reports"
@@ -653,19 +653,18 @@ def create_landscape_poster(out_path: Path):
 
 
 if __name__ == "__main__":
-    portrait_artifact = ARTIFACT_DIR / "poster_spd_ensi_65x100cm_portrait.pptx"
-    landscape_artifact = ARTIFACT_DIR / "poster_spd_ensi_100x65cm_paysage.pptx"
-
     portrait_report = REPORTS_DIR / "poster_spd_ensi_65x100cm_portrait.pptx"
     landscape_report = REPORTS_DIR / "poster_spd_ensi_100x65cm_paysage.pptx"
 
     print("Building portrait posters...")
     create_portrait_poster(portrait_report)
-    create_portrait_poster(portrait_artifact)
+    if ARTIFACT_DIR.exists():
+        create_portrait_poster(ARTIFACT_DIR / "poster_spd_ensi_65x100cm_portrait.pptx")
 
     print("Building landscape posters...")
     create_landscape_poster(landscape_report)
-    create_landscape_poster(landscape_artifact)
+    if ARTIFACT_DIR.exists():
+        create_landscape_poster(ARTIFACT_DIR / "poster_spd_ensi_100x65cm_paysage.pptx")
 
-    print("All PowerPoint posters successfully generated in reports and artifact dir!")
+    print("All PowerPoint posters successfully generated!")
 
